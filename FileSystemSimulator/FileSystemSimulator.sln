@@ -4,10 +4,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.28307.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FileSystem", "FileSystem\FileSystem.vcxproj", "{AC9F58A9-4730-49CD-991B-028155683D3E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BC33AE28-2946-4983-812C-F3B435ED30D5} = {BC33AE28-2946-4983-812C-F3B435ED30D5}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IOSystem", "IOSystem\IOSystem.vcxproj", "{BC33AE28-2946-4983-812C-F3B435ED30D5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shell", "Shell\Shell.vcxproj", "{B7E879F8-3155-453D-9DEA-CD25917243B8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC9F58A9-4730-49CD-991B-028155683D3E} = {AC9F58A9-4730-49CD-991B-028155683D3E}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
