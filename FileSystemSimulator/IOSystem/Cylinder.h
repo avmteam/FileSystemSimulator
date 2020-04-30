@@ -14,7 +14,8 @@ public:
 	};
 
 	~Cylinder() {
+                for (int i = 0; i < NUMBER_OF_TRACKS; i++)
+                    delete tracks[i];
 		delete[] tracks;
 	};
 };
-
