@@ -15,9 +15,8 @@ public:
 
 private:
 	Disk* ldisk;
-	static const int BLOCKS_IN_CYLINDER = Cylinder::NUMBER_OF_TRACKS * Track::NUMBER_OF_SECTORS;
 
-	int* getBlockLocationOnDisk(int);
+	void get_block_location_on_disk(int, int*);
 
 	
 

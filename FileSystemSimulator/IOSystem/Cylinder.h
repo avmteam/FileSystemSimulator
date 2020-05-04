@@ -4,6 +4,8 @@ class Cylinder
 {
 public:
 	static const int NUMBER_OF_TRACKS = 2;
+	static const int NUMBER_OF_BLOCKS = NUMBER_OF_TRACKS * Track::NUMBER_OF_SECTORS * Sector::NUMBER_OF_BLOCKS;
+
 	Track** tracks;
 
 	Cylinder() {

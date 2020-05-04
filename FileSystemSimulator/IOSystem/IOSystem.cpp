@@ -12,19 +12,14 @@ IOSystem::~IOSystem()
 {
 }
 
-int * IOSystem::getBlockLocationOnDisk(int blockNumber)
+void IOSystem::get_block_location_on_disk(int blockNumber, int* result)
 {
-	int result[3];
-	int cylinderNumber = -1, trackNumber = -1, sectorNumber = -1;
 
-	cylinderNumber = blockNumber / BLOCKS_IN_CYLINDER;
-	trackNumber = (blockNumber % BLOCKS_IN_CYLINDER) / Track::NUMBER_OF_SECTORS;
-	sectorNumber = (blockNumber % BLOCKS_IN_CYLINDER) % Track::NUMBER_OF_SECTORS;
+	result[0] = blockNumber / Cylinder::NUMBER_OF_BLOCKS; //cylinder number
+	result[1] = (blockNumber % Cylinder::NUMBER_OF_BLOCKS) / Track::NUMBER_OF_BLOCKS; //track number
+	result[2] = ((blockNumber % Cylinder::NUMBER_OF_BLOCKS) % Track::NUMBER_OF_BLOCKS) / Sector::NUMBER_OF_BLOCKS; //sector number
+	result[3] = ((blockNumber % Cylinder::NUMBER_OF_BLOCKS) % Track::NUMBER_OF_BLOCKS) % Sector::NUMBER_OF_BLOCKS; //block number
 
-	result[0] = cylinderNumber;
-	result[1] = trackNumber;
-	result[2] = sectorNumber;
-	return result;
 }
 
 void IOSystem::read_block(int blockNumber, char * p)
@@ -34,9 +29,11 @@ void IOSystem::read_block(int blockNumber, char * p)
 	if (!p) throw std::invalid_argument("invalid pointer");
 
 
-	int* blockLocation = getBlockLocationOnDisk(blockNumber);
-	Sector* block = ldisk->cylinders[blockLocation[0]]->tracks[blockLocation[1]]->sectors[blockLocation[2]];
-	memcpy(p, block->bytes, sizeof(block->bytes));
+	int* blockLocation = new int[4];
+	get_block_location_on_disk(blockNumber, blockLocation);
+	char* block = ldisk->cylinders[blockLocation[0]]->tracks[blockLocation[1]]->sectors[blockLocation[2]]->blocks[blockLocation[3]];
+	delete[] blockLocation;
+	memcpy(p, block, Sector::BLOCK_SIZE);
 }
 
 void IOSystem::write_block(int blockNumber, char * p)
@@ -46,7 +43,9 @@ void IOSystem::write_block(int blockNumber, char * p)
 	if (!p) throw std::invalid_argument("invalid pointer");
 
 
-	int* blockLocation = getBlockLocationOnDisk(blockNumber);
-	Sector* block = ldisk->cylinders[blockLocation[0]]->tracks[blockLocation[1]]->sectors[blockLocation[2]];
-	memcpy(block->bytes, p, sizeof(block->bytes));
+	int* blockLocation = new int[4];
+	get_block_location_on_disk(blockNumber, blockLocation);
+	char* block = ldisk->cylinders[blockLocation[0]]->tracks[blockLocation[1]]->sectors[blockLocation[2]]->blocks[blockLocation[3]];
+	delete[] blockLocation;
+	memcpy(block, p, Sector::BLOCK_SIZE);
 }
