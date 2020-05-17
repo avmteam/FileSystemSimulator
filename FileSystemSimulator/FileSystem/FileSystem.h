@@ -2,54 +2,12 @@
 
 #include "../IOSystem/IOSystem.h"
 #include "OpenFileTable.h"
+#include "FileDescriptor.h"
 
 // TODO: add errors code
 class FileSystem
 {
 public:
-
-  // TODO: move impl to cpp file
-  struct FileDescriptor {
-    static const size_t MAX_DATA_BLOCKS = 3;
-
-    FileDescriptor(bool i_is_free) :
-      is_free(i_is_free)
-    {
-      std::memset(data_blocks, -1, MAX_DATA_BLOCKS);
-    }
-
-    bool isFull() {
-      return data_blocks[MAX_DATA_BLOCKS - 1] != -1;
-    }
-
-    size_t getLastBlockIndex() {
-      if (isFull())
-        return MAX_DATA_BLOCKS - 1;
-
-      size_t i = 0;
-      while (data_blocks[i] != -1)
-        i++;
-
-      return i;
-    }
-
-    size_t getLastBlock() {
-      return data_blocks[getLastBlockIndex()];
-    }
-
-    bool addBlock(size_t i_index) {
-      if (isFull())
-        return false;
-
-      size_t last_index = getLastBlockIndex();
-      data_blocks[last_index + 1] = i_index;
-      return true;
-    }
-
-    bool is_free = true;
-    size_t file_size = 0;
-    int data_blocks[MAX_DATA_BLOCKS];
-  };
 
   struct DirEntry {
     static const size_t MAX_FILE_NAME_LENGTH = 16;
@@ -89,8 +47,12 @@ private:
   IOSystem* iosystem;
   OpenFileTable* oft;
 
-  static const size_t DATA_BLOCKS_NUMBER = Disk::NUMBER_OF_BLOCKS * Sector::BLOCK_SIZE / (Sector::BLOCK_SIZE + sizeof(FileDescriptor) + 1) - 1;
-  static const size_t BITMAP_BLOCKS_NUMBER = DATA_BLOCKS_NUMBER / Sector::BLOCK_SIZE;
+  static const size_t DATA_BLOCKS_NUMBER = Disk::NUMBER_OF_BLOCKS * Sector::BLOCK_SIZE / (Sector::BLOCK_SIZE + sizeof(FileDescriptor) + 1);
+  static const size_t BITMAP_BLOCKS_NUMBER = DATA_BLOCKS_NUMBER / Sector::BLOCK_SIZE + 1;
+  static const size_t FD_BLOCKS_NUMBER = Disk::NUMBER_OF_BLOCKS - DATA_BLOCKS_NUMBER - BITMAP_BLOCKS_NUMBER;
+  static const size_t FDS_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
+  static const size_t FD_NUMBER = FD_BLOCKS_NUMBER / FDS_IN_BLOCK;
+
   static const size_t FIRST_DATA_BLOCK_INDEX = Disk::NUMBER_OF_BLOCKS - DATA_BLOCKS_NUMBER;
   static const size_t ENTRIES_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(DirEntry);
 };

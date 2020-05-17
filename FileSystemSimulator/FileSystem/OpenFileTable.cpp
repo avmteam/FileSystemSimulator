@@ -44,6 +44,8 @@ bool OpenFileTable::freeEntry(size_t i_index)
   OFTEntry* entry = getEntry(i_index);
   entry->fd_index = -1;
   entry->cur_pos = 0;
+
+  return true;
 }
 
 bool OpenFileTable::isExist(size_t i_index)
@@ -52,5 +54,5 @@ bool OpenFileTable::isExist(size_t i_index)
     return false;
 
   OFTEntry entry = entries[i_index];
-  return (entries->fd_index != -1);
+  return (entry.fd_index != -1);
 }

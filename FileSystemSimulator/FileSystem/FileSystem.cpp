@@ -13,9 +13,8 @@ FileSystem::FileSystem(IOSystem* i_iosystem) :
     iosystem->write_block(i, bitmap);
 
   // init file descriptors with is_free = true
-  size_t fd_in_block = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
   char block[Sector::BLOCK_SIZE];
-  for (size_t i = 0; i < fd_in_block; i++) {
+  for (size_t i = 0; i < FDS_IN_BLOCK; i++) {
     FileDescriptor* fd = (FileDescriptor*)block + i;
     *fd = FileDescriptor(true);
   }
@@ -34,7 +33,7 @@ FileSystem::~FileSystem()
 
 bool FileSystem::create(const std::string & i_file_name)
 {
-  if (i_file_name == "dir" || i_file_name == "")
+  if (i_file_name == "")
     return false;
 
   int fd_index = findFreeFileDescriptor();
@@ -86,15 +85,19 @@ bool FileSystem::close(size_t i_index)
   }
 
   oft->freeEntry(i_index);
+  return true;
 }
 
 bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 {
+  if (i_count == 0)
+    return true;
+
   OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
   if (!entry)
     return false;
-  FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
+  FileDescriptor fd = getFileDescriptor(entry->fd_index);
   if (fd.file_size == 0) {
     bool success = allocateDataBlock(entry->fd_index);
     if (!success)
@@ -131,16 +134,15 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 
 int FileSystem::findFreeFileDescriptor()
 {
-  size_t fd_in_block = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
   size_t first_fd_index = BITMAP_BLOCKS_NUMBER;
 
   for (size_t i = first_fd_index; i < FIRST_DATA_BLOCK_INDEX; i++) {
     char block[Sector::BLOCK_SIZE];
     iosystem->read_block(i, block);
-    for (size_t j = 0; j < fd_in_block; j++) {
+    for (size_t j = 0; j < FDS_IN_BLOCK; j++) {
       FileDescriptor* fd = (FileDescriptor*)block + j;
       if (fd->is_free)
-        return (i - first_fd_index)*fd_in_block + j;
+        return (i - first_fd_index)*FDS_IN_BLOCK + j;
     }
   }
 
@@ -155,7 +157,7 @@ bool FileSystem::recordFileToDir(const std::string & i_file_name, size_t i_fd_in
 
   // search for existing file with name i_file_name
   int first_free_index = -1;
-  for (size_t i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
+  for (int i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
     char block[Sector::BLOCK_SIZE];
     iosystem->read_block(dir_fd.data_blocks[i], block);
 
@@ -168,7 +170,7 @@ bool FileSystem::recordFileToDir(const std::string & i_file_name, size_t i_fd_in
       if (strcmp(entry->file_name, "") == 0 && first_free_index == -1)
         first_free_index = i * ENTRIES_IN_BLOCK + j;
 
-      if (i*ENTRIES_IN_BLOCK + j == entries_number)
+      if (i*ENTRIES_IN_BLOCK + j == entries_number - 1)
         break;
     }
   }
@@ -201,15 +203,14 @@ bool FileSystem::recordFileToDir(const std::string & i_file_name, size_t i_fd_in
   return true;
 }
 
-FileSystem::FileDescriptor FileSystem::getFileDescriptor(size_t i_index)
+FileDescriptor FileSystem::getFileDescriptor(size_t i_index)
 {
   char block[Sector::BLOCK_SIZE];
 
-  size_t fd_in_block = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
   size_t first_fd_index = BITMAP_BLOCKS_NUMBER;
 
-  size_t block_number = i_index / fd_in_block;
-  size_t fd_number = i_index % fd_in_block;
+  size_t block_number = i_index / FDS_IN_BLOCK;
+  size_t fd_number = i_index % FDS_IN_BLOCK;
 
   iosystem->read_block(first_fd_index + block_number, block);
   FileDescriptor* fd = (FileDescriptor*)block + fd_number;
@@ -219,16 +220,14 @@ FileSystem::FileDescriptor FileSystem::getFileDescriptor(size_t i_index)
 
 bool FileSystem::writeFileDescriptorToIO(const FileDescriptor& i_fd, size_t i_index)
 {
-  if (i_index >= Disk::NUMBER_OF_BLOCKS)
+  if (i_index >= FD_NUMBER)
     return false;
 
   char block[Sector::BLOCK_SIZE];
-
-  size_t fd_in_block = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
   size_t first_fd_index = BITMAP_BLOCKS_NUMBER;
 
-  size_t block_number = i_index / fd_in_block;
-  size_t fd_number = i_index % fd_in_block;
+  size_t block_number = i_index / FDS_IN_BLOCK;
+  size_t fd_number = i_index % FDS_IN_BLOCK;
 
   iosystem->read_block(first_fd_index + block_number, block);
   FileDescriptor* fd = (FileDescriptor*)block + fd_number;
@@ -241,7 +240,7 @@ bool FileSystem::writeFileDescriptorToIO(const FileDescriptor& i_fd, size_t i_in
 
 bool FileSystem::allocateDataBlock(size_t i_index)
 {
-  if (i_index >= Disk::NUMBER_OF_BLOCKS)
+  if (i_index >= FD_NUMBER)
     return false;
 
   int db_index = findFreeDataBlock();
@@ -300,7 +299,7 @@ int FileSystem::findFileDescriptor(const std::string & i_file_name)
   FileDescriptor dir_fd = getFileDescriptor(0);
   size_t entries_number = dir_fd.file_size / sizeof(DirEntry);
 
-  for (size_t i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
+  for (int i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
     char block[Sector::BLOCK_SIZE];
     iosystem->read_block(dir_fd.data_blocks[i], block);
 
@@ -309,7 +308,7 @@ int FileSystem::findFileDescriptor(const std::string & i_file_name)
       if (strcmp(entry->file_name, i_file_name.c_str()) == 0)
         return entry->file_descr_index;
 
-      if (i*ENTRIES_IN_BLOCK + j == entries_number)
+      if (i*ENTRIES_IN_BLOCK + j == entries_number - 1)
         break;
     }
   }
