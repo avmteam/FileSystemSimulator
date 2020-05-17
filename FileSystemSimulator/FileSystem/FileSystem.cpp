@@ -161,6 +161,36 @@ bool FileSystem::lseek(size_t i_index, size_t i_pos)
 	return true;
 }
 
+std::vector<FileSystem::FileInfo> FileSystem::directory()
+{
+	FileDescriptor dir_fd = getFileDescriptor(0);
+	size_t entries_number = dir_fd.file_size / sizeof(DirEntry);
+
+	vector<FileInfo> files;
+
+	for (int i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
+
+		char block[Sector::BLOCK_SIZE];
+		iosystem->read_block(dir_fd.data_blocks[i], block);
+
+		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
+
+			DirEntry* entry = (DirEntry*)block + j;
+
+			FileDescriptor fd = findFileDescriptor(entry->file_name);
+
+			FileInfo fi(entry->file_name, fd.file_size);
+
+			files.push_back(fi);
+
+			if (i * ENTRIES_IN_BLOCK + j == entries_number - 1)
+				break;
+		}
+	}
+
+	return files;
+}
+
 int FileSystem::findFreeFileDescriptor()
 {
   size_t first_fd_index = BITMAP_BLOCKS_NUMBER;
