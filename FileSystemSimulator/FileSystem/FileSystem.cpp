@@ -132,6 +132,68 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
   }
 }
 
+bool FileSystem::lseek(size_t i_index, size_t i_pos)
+{
+	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
+
+	if (!entry)
+		return false;
+
+	FileDescriptor fd = getFileDescriptor(entry->fd_index);
+
+	if (i_pos >= fd.file_size)
+		return false;
+
+	size_t cur_pos = entry->cur_pos;
+
+	size_t cur_block = cur_pos / Sector::BLOCK_SIZE;
+	size_t new_block = i_pos / Sector::BLOCK_SIZE;
+
+	// check if new position is within the current data block 
+	if (cur_block != new_block)
+	{
+		iosystem->write_block(cur_block, entry->buffer);
+		iosystem->read_block(new_block, entry->buffer);
+	}
+
+	entry->cur_pos = i_pos;
+
+	return true;
+}
+
+std::vector<FileSystem::FileInfo> FileSystem::directory()
+{
+	FileDescriptor dir_fd = getFileDescriptor(0);
+	size_t entries_number = dir_fd.file_size / sizeof(DirEntry);
+
+	vector<FileInfo> files;
+
+	for (int i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
+
+		char block[Sector::BLOCK_SIZE];
+		iosystem->read_block(dir_fd.data_blocks[i], block);
+
+		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
+
+			DirEntry* entry = (DirEntry*)block + j;
+			
+			if (entry->file_name == "")
+			    continue;
+
+			FileDescriptor fd = findFileDescriptor(entry->file_name);
+
+			FileInfo fi(entry->file_name, fd.file_size);
+
+			files.push_back(fi);
+
+			if (i * ENTRIES_IN_BLOCK + j == entries_number - 1)
+				break;
+		}
+	}
+
+	return files;
+}
+
 int FileSystem::findFreeFileDescriptor()
 {
   size_t first_fd_index = BITMAP_BLOCKS_NUMBER;

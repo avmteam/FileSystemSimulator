@@ -3,11 +3,13 @@
 #include "../IOSystem/IOSystem.h"
 #include "OpenFileTable.h"
 #include "FileDescriptor.h"
+#include <vector>
 
 // TODO: add errors code
 class FileSystem
 {
 public:
+
 
   struct DirEntry {
     static const size_t MAX_FILE_NAME_LENGTH = 16;
@@ -21,6 +23,17 @@ public:
     size_t file_descr_index;
   };
 
+  struct FileInfo {
+
+	  FileInfo(const std::string& i_file_name, size_t i_file_length) {
+		  std::memcpy(file_name, i_file_name.c_str(), DirEntry::MAX_FILE_NAME_LENGTH);
+		  file_length = i_file_length;
+	  }
+
+	  char file_name[DirEntry::MAX_FILE_NAME_LENGTH];
+	  size_t file_length;
+  };
+
 public:
   FileSystem(IOSystem* i_iosystem);
   ~FileSystem();
@@ -32,6 +45,7 @@ public:
   bool read(size_t index, char* mem_area, size_t count);
   bool write(size_t index, char* mem_area, size_t count);
   bool lseek(size_t index, size_t pos);
+  std::vector<FileInfo> directory();
 
 private:
   int findFreeFileDescriptor();
