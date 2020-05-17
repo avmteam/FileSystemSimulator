@@ -176,6 +176,9 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
 
 			DirEntry* entry = (DirEntry*)block + j;
+			
+			if (entry->file_name == "")
+			    continue;
 
 			FileDescriptor fd = findFileDescriptor(entry->file_name);
 
