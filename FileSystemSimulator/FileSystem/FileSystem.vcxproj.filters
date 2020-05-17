@@ -24,12 +24,18 @@
     <ClInclude Include="FileSystem.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="OpenFileTable.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="FileSystem.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenFileTable.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
