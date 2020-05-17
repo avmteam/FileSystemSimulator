@@ -132,6 +132,35 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
   }
 }
 
+bool FileSystem::lseek(size_t i_index, size_t i_pos)
+{
+	if (i_pos > Sector::BLOCK_SIZE * Sector::NUMBER_OF_BLOCKS)
+		return false;
+
+	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
+
+	FileDescriptor fd = getFileDescriptor(entry->fd_index);
+
+	if (i_pos > fd.file_size)
+		return false;
+
+	size_t cur_pos = entry->cur_pos;
+
+	size_t cur_block = cur_pos / Sector::BLOCK_SIZE;
+	size_t new_block = i_pos / Sector::BLOCK_SIZE;
+
+	// check if new position is within the current data block 
+	if (cur_block != new_block)
+	{
+		iosystem->write_block(cur_block, entry->buffer);
+		iosystem->read_block(new_block, entry->buffer);
+	}
+
+	entry->cur_pos = i_pos;
+
+	return true;
+}
+
 int FileSystem::findFreeFileDescriptor()
 {
   size_t first_fd_index = BITMAP_BLOCKS_NUMBER;
