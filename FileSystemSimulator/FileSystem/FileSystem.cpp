@@ -134,14 +134,14 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 
 bool FileSystem::lseek(size_t i_index, size_t i_pos)
 {
-	if (i_pos > Sector::BLOCK_SIZE * Sector::NUMBER_OF_BLOCKS)
-		return false;
-
 	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
+
+	if (!entry)
+		return false;
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
-	if (i_pos > fd.file_size)
+	if (i_pos >= fd.file_size)
 		return false;
 
 	size_t cur_pos = entry->cur_pos;
