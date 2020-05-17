@@ -109,7 +109,7 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     size_t buffer_pos = entry->cur_pos % Sector::BLOCK_SIZE;
     size_t buffer_space = Sector::BLOCK_SIZE - buffer_pos;
 
-    if (i_count < buffer_space) {
+    if (i_count <= buffer_space) {
       std::memcpy(entry->buffer + buffer_pos, i_mem_area, i_count);
       entry->cur_pos += i_count;
       return true;
