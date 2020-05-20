@@ -1,13 +1,14 @@
 #pragma once
 #include <stdexcept>
 #include <cstring>
-
 #include "Disk.h"
+
 using namespace std;
 class IOSystem
 {
 public:
 	IOSystem(Disk*);
+	IOSystem();
 	~IOSystem();
 
 	void read_block(int, char*);

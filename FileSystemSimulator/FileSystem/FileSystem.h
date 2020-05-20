@@ -36,6 +36,7 @@ public:
 
 public:
   FileSystem(IOSystem* i_iosystem);
+  FileSystem();
   ~FileSystem();
 
   bool create(const std::string& i_file_name);

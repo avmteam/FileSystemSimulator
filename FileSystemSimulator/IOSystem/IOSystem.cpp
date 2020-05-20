@@ -7,6 +7,11 @@ IOSystem::IOSystem(Disk* ldisk)
 	this->ldisk = ldisk;
 }
 
+IOSystem::IOSystem()
+{
+	ldisk = new Disk();
+}
+
 
 IOSystem::~IOSystem()
 {

@@ -1,28 +1,34 @@
 #include "stdafx.h"
 #include "FileSystem.h"
+#include "../IOSystem/IOSystem.h"
 
+
+FileSystem::FileSystem()
+{
+	FileSystem(new IOSystem());
+}
 
 FileSystem::FileSystem(IOSystem* i_iosystem) :
-  iosystem(i_iosystem),
-  oft(new OpenFileTable())
+	iosystem(i_iosystem),
+	oft(new OpenFileTable())
 {
-  // init bitmap with true (is_free)
-  char bitmap[Sector::BLOCK_SIZE];
-  std::memset(bitmap, true, Sector::BLOCK_SIZE);
-  for (size_t i = 0; i < BITMAP_BLOCKS_NUMBER; i++)
-    iosystem->write_block(i, bitmap);
+	// init bitmap with true (is_free)
+	char bitmap[Sector::BLOCK_SIZE];
+	std::memset(bitmap, true, Sector::BLOCK_SIZE);
+	for (size_t i = 0; i < BITMAP_BLOCKS_NUMBER; i++)
+		iosystem->write_block(i, bitmap);
 
-  // init file descriptors with is_free = true
-  char block[Sector::BLOCK_SIZE];
-  for (size_t i = 0; i < FDS_IN_BLOCK; i++) {
-    FileDescriptor* fd = (FileDescriptor*)block + i;
-    *fd = FileDescriptor(true);
-  }
-  for (size_t i = BITMAP_BLOCKS_NUMBER; i < FIRST_DATA_BLOCK_INDEX; i++)
-    iosystem->write_block(i, block);
+	// init file descriptors with is_free = true
+	char block[Sector::BLOCK_SIZE];
+	for (size_t i = 0; i < FDS_IN_BLOCK; i++) {
+		FileDescriptor* fd = (FileDescriptor*)block + i;
+		*fd = FileDescriptor(true);
+	}
+	for (size_t i = BITMAP_BLOCKS_NUMBER; i < FIRST_DATA_BLOCK_INDEX; i++)
+		iosystem->write_block(i, block);
 
-  // dir file descriptor (index 0) is not free
-  writeFileDescriptorToIO(FileDescriptor(false), 0);
+	// dir file descriptor (index 0) is not free
+	writeFileDescriptorToIO(FileDescriptor(false), 0);
 }
 
 
