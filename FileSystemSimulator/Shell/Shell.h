@@ -16,7 +16,9 @@ public:
 	const std::string help_command = "gh";	// get help
 	const std::string exit_command = "ex";
 
-	const int exit_code = 0;
+	const int exit_code = 1;
+	const int invalid_command_code = 2;
+	const int success_code = 0;
 
 public:
 	Shell(FileSystem* i_filesystem);
@@ -33,6 +35,12 @@ public:
 	void printReadCommandResult(size_t index, char* mem_area, size_t count);
 	void printWriteCommandResult(size_t index, char* mem_area, size_t coun);
 	void printLseekCommandResult(size_t index, size_t pos);
+
+	void filenameLengthExceededTestCase();
+	void invalidFilenameTestCase();
+	void createDestroyOpenFileTestCase();
+	void openAlreadyOpenedFileTestCase();
+	void destroyOpenedFile();
 
 private:
 

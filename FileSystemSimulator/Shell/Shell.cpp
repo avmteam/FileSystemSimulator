@@ -38,16 +38,103 @@ int Shell::parseCommand(string i_command_string)
 {
 	if (!isValidCommandName(i_command_string.substr(0, 3))) {
 		cout << "Invalid command name, try again. Print gh to get help and view list of commands.\n";
-		return -1; // invalid command string code;
+		return invalid_command_code; 
 	}
 
 	if (i_command_string.substr(0, 2) == exit_command) {
 
-		cout << "end.\n";
+		cout << "End.\n";
 		return exit_code;
 	}
 
+	if (i_command_string.substr(0, 2) == create_command) {
+
+		i_command_string.erase(0, 3);
+		printCreateCommandResult(i_command_string);
+	}
+
+	if (i_command_string.substr(0, 2) == destroy_command) {
+
+
+	}
+
+	if (i_command_string.substr(0, 2) == open_command) {
+
+
+	}
+
+	if (i_command_string.substr(0, 2) == close_command) {
+
+
+	}
+
+	if (i_command_string.substr(0, 2) == read_command) {
+
+
+	}
+
+	if (i_command_string.substr(0, 2) == write_command) {
+
+
+	}
+
+	if (i_command_string.substr(0, 2) == lseek_command) {
+
+		
+	}
+
+	if (i_command_string.substr(0, 2) == directory_command) {
+
+
+	}
+
+	if (i_command_string.substr(0, 2) == help_command) {
+
+		printHelp();
+		return success_code;
+	}
+
 	return -1;
+}
+
+void Shell::printCreateCommandResult(const std::string & i_file_name)
+{
+	if (filesystem->create(i_file_name))
+		cout << "File \"" + i_file_name + "\" created successfully.\n";
+	else
+		cout << "File creation failure.\n";
+}
+
+void Shell::filenameLengthExceededTestCase()
+{
+	parseCommand("cr super_super_super_looooooooooooong_file_name.txt");
+}
+
+void Shell::invalidFilenameTestCase()
+{
+	parseCommand("cr \\name\\#@>.txt");
+	parseCommand("cr \\na+dsfd*");
+}
+
+void Shell::createDestroyOpenFileTestCase()
+{
+	parseCommand("cr test.txt");
+	parseCommand("ds test.txt");
+	parseCommand("op test.txt");
+}
+
+void Shell::openAlreadyOpenedFileTestCase()
+{
+	parseCommand("cr test.txt");
+	parseCommand("op test.txt");
+	parseCommand("op test.txt");
+}
+
+void Shell::destroyOpenedFile()
+{
+	parseCommand("cr test.txt");
+	parseCommand("op test.txt");
+	parseCommand("ds test.txt");
 }
 
 bool Shell::isValidCommandName(string i_command_name)
