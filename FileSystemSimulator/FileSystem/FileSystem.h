@@ -56,6 +56,7 @@ private:
   int findFreeDataBlock();
   bool setBit(size_t i_index, bool i_is_free);
   int findFileDescriptor(const std::string& i_file_name);
+  DirEntry* findDirEntry(const std::string & i_file_name);
 
 private:
   IOSystem* iosystem;
