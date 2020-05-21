@@ -182,7 +182,8 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 			if (entry->file_name == "")
 			    continue;
 
-			FileDescriptor fd = findFileDescriptor(entry->file_name);
+      // findFileDescriptor returns index of found file descriptor
+			FileDescriptor fd = getFileDescriptor(findFileDescriptor(entry->file_name));
 
 			FileInfo fi(entry->file_name, fd.file_size);
 
@@ -205,13 +206,9 @@ void FileSystem::init()
     iosystem->write_block(i, bitmap);
 
   // init file descriptors with is_free = true
-  char block[Sector::BLOCK_SIZE];
-  for (size_t i = 0; i < FDS_IN_BLOCK; i++) {
-    FileDescriptor* fd = (FileDescriptor*)block + i;
-    *fd = FileDescriptor(true);
-  }
+  FileDescriptor block[FDS_IN_BLOCK];
   for (size_t i = BITMAP_BLOCKS_NUMBER; i < FIRST_DATA_BLOCK_INDEX; i++)
-    iosystem->write_block(i, block);
+    iosystem->write_block(i, (char*)block);
 
   // dir file descriptor (index 0) is not free
   writeFileDescriptorToIO(FileDescriptor(false), 0);
@@ -318,7 +315,7 @@ bool FileSystem::writeFileDescriptorToIO(const FileDescriptor& i_fd, size_t i_in
   FileDescriptor* fd = (FileDescriptor*)block + fd_number;
 
   *fd = i_fd;
-  iosystem->write_block(i_index, block);
+  iosystem->write_block(first_fd_index + block_number, block);
 
   return true;
 }
