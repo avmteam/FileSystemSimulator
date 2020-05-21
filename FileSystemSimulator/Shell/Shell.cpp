@@ -11,12 +11,12 @@ Shell::Shell(FileSystem* i_filesystem)
 
 Shell::Shell()
 {
-	//FileSystem filesys;
-	filesystem = new FileSystem();//&filesys;
+	filesystem = new FileSystem();
 }
 
 Shell::~Shell()
 {
+	delete filesystem;
 }
 
 void Shell::printHelp()
@@ -27,9 +27,9 @@ void Shell::printHelp()
 	cout << "open file - " + open_command + " <filename>\nnote: open file command " + 
 		"returns opened file key, use it to read, write and lseek through the file\n";
 	cout << "close file - " + close_command + " <key>\n";
-	cout << "read from file - " + read_command + " <key> <?>\n";
-	cout << "write to file - " + write_command + " <key> <?>\n";
-	cout << "lseek in file - " + lseek_command + " <key> <?>\n";
+	cout << "read from file - " + read_command + " <key> <number_of_characters_to_read>\n";
+	cout << "write to file - " + write_command + " <key> <text> <number_of_characters_to_write>\n";
+	cout << "lseek in file - " + lseek_command + " <key> <position>\n";
 	cout << "list all files on disk - " + directory_command + "\n";
 	cout << "exit simulator - " + exit_command + "\n\n";
 }
@@ -47,6 +47,12 @@ int Shell::parseCommand(string i_command_string)
 		return exit_code;
 	}
 
+	if (i_command_string.substr(0, 2) == help_command) {
+
+		printHelp();
+		return success_code;
+	}
+
 	if (i_command_string.substr(0, 2) == create_command) {
 
 		i_command_string.erase(0, 3);
@@ -55,43 +61,51 @@ int Shell::parseCommand(string i_command_string)
 
 	if (i_command_string.substr(0, 2) == destroy_command) {
 
-
+		i_command_string.erase(0, 3);
+		printDestroyCommandResult(i_command_string);
 	}
 
 	if (i_command_string.substr(0, 2) == open_command) {
 
-
+		i_command_string.erase(0, 3);
+		printOpenCommandResult(i_command_string);
 	}
 
 	if (i_command_string.substr(0, 2) == close_command) {
 
-
+		i_command_string.erase(0, 3);
+		int key = getKeyFromCommandString(i_command_string);
+		printCloseCommandResult(key);
 	}
 
 	if (i_command_string.substr(0, 2) == read_command) {
 
-
+		i_command_string.erase(0, 3);
+		int key = stoi(getIWord(i_command_string, 1));
+		int number_of_chars = stoi(getIWord(i_command_string, 2));
+		printReadCommandResult(key, number_of_chars);
 	}
 
 	if (i_command_string.substr(0, 2) == write_command) {
 
-
+		i_command_string.erase(0, 3);
+		int key = getKeyFromCommandString(i_command_string);
+		string text = getIWord(i_command_string, 2);
+		int number_of_characters = stoi(getIWord(i_command_string, 3));
+		printWriteCommandResult(key, const_cast<char*>(text.c_str()), number_of_characters);
 	}
 
 	if (i_command_string.substr(0, 2) == lseek_command) {
 
-		
+		i_command_string.erase(0, 3);
+		int key = getKeyFromCommandString(i_command_string);
+		int pos = stoi(getIWord(i_command_string, 2));
+		printLseekCommandResult(key, pos);
 	}
 
 	if (i_command_string.substr(0, 2) == directory_command) {
 
 
-	}
-
-	if (i_command_string.substr(0, 2) == help_command) {
-
-		printHelp();
-		return success_code;
 	}
 
 	return -1;
@@ -103,6 +117,48 @@ void Shell::printCreateCommandResult(const std::string & i_file_name)
 		cout << "File \"" + i_file_name + "\" created successfully.\n";
 	else
 		cout << "File creation failure.\n";
+}
+
+void Shell::printDestroyCommandResult(const std::string & i_file_name)
+{
+	if (!filesystem->destroy(i_file_name))
+		cout << "Error occured while trying to destroy requested file.\n";
+}
+
+void Shell::printOpenCommandResult(const std::string & i_file_name)
+{
+	int key = filesystem->open(i_file_name);
+	if (key != -1)
+		cout << "Your key for file " << "\"" << i_file_name << "\"" << key << endl;
+	else
+		cout << "Error occured while trying to open requested file.\n";
+}
+
+void Shell::printCloseCommandResult(size_t index)
+{
+	if (!filesystem->close(index)) 
+		cout << "Error occured while trying to close requested file";
+}
+
+void Shell::printReadCommandResult(size_t index, size_t count)
+{
+	char* mem_area = new char[0];
+	if (!filesystem->read(index, mem_area, count))
+		cout << "Error occured while trying to read requested file.\n";
+	else
+		cout << "Read from file: " << mem_area << endl;
+}
+
+void Shell::printWriteCommandResult(size_t index, char * mem_area, size_t count)
+{
+	if (!filesystem->write(index, mem_area, count))
+		cout << "Error occured while trying to write to requested file.\n";
+}
+
+void Shell::printLseekCommandResult(size_t index, size_t pos)
+{
+	if (!filesystem->lseek(index, pos))
+		cout << "Error occured while trying to lseek through requested file.\n";
 }
 
 void Shell::filenameLengthExceededTestCase()
@@ -159,4 +215,33 @@ bool Shell::isValidCommandName(string i_command_name)
 			actual_command == directory_command ||
 			actual_command == help_command ||
 			actual_command == exit_command);
+}
+
+int Shell::getKeyFromCommandString(string i_command_string)
+{
+	return(stoi(getIWord(i_command_string, 1)));
+}
+
+// returns word number index counting from 1
+string Shell::getIWord(string i_command_string, int index)
+{
+	int count = 0;
+	size_t i = 0;
+
+	string word = "";
+
+	while (count++ != index) {
+
+		word = "";
+
+		while (i_command_string[i] != ' ')
+			word += i_command_string[i++];
+
+		if (!i) 
+			throw std::invalid_argument("invalid word index");
+
+		i++;
+	}
+
+	return word;
 }

@@ -40,6 +40,11 @@ bool FileSystem::create(const std::string & i_file_name)
   return true;
 }
 
+bool FileSystem::destroy(const std::string & i_file_name)
+{
+	return false;
+}
+
 int FileSystem::open(const std::string & i_file_name)
 {
   size_t fd_index = findFileDescriptor(i_file_name);
@@ -78,6 +83,11 @@ bool FileSystem::close(size_t i_index)
 
   oft->freeEntry(i_index);
   return true;
+}
+
+bool FileSystem::read(size_t index, char * mem_area, size_t count)
+{
+	return false;
 }
 
 bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)

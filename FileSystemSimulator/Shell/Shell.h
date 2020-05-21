@@ -29,10 +29,9 @@ public:
 	int parseCommand(string i_command_string);
 	void printCreateCommandResult(const std::string& i_file_name);
 	void printDestroyCommandResult(const std::string& i_file_name);
-	// [print and] get for receiving open file index if success
-	int printAndGetOpenCommandResult(const std::string& i_file_name);
+	void printOpenCommandResult(const std::string& i_file_name);
 	void printCloseCommandResult(size_t index);
-	void printReadCommandResult(size_t index, char* mem_area, size_t count);
+	void printReadCommandResult(size_t index, size_t count);
 	void printWriteCommandResult(size_t index, char* mem_area, size_t coun);
 	void printLseekCommandResult(size_t index, size_t pos);
 
@@ -45,6 +44,8 @@ public:
 private:
 
 	bool isValidCommandName(string i_command_name);
+	int getKeyFromCommandString(string i_command_string);
+	string getIWord(string i_command_string, int index);
 
 private:
 
