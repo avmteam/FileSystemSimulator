@@ -45,20 +45,38 @@ bool FileSystem::destroy(const std::string & i_file_name)
 	if (i_file_name == "")
 		return false;
 	
-	DirEntry* entry = findDirEntry(i_file_name);
-	if (!entry) 
-		return false;
-	string destroyed_file_name = "";
-	std::memcpy(entry->file_name, destroyed_file_name.c_str(), DirEntry::MAX_FILE_NAME_LENGTH);
-	
-	FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
-	for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
-		if(!setBit(fd.data_blocks[i], true)) return false;
+	FileDescriptor dir_fd = getFileDescriptor(0);
+	size_t entries_number = dir_fd.file_size / sizeof(DirEntry);
+
+	for (int i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
+		char block[Sector::BLOCK_SIZE];
+		iosystem->read_block(dir_fd.data_blocks[i], block);
+
+		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
+			DirEntry* entry = (DirEntry*)block + j;
+			if (strcmp(entry->file_name, i_file_name.c_str()) == 0) {
+				
+				FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
+				for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
+					if (!setBit(fd.data_blocks[i], true)) return false;
+				}
+				fd.is_free = true;
+				fd.clearDataBlocks();
+				writeFileDescriptorToIO(fd, entry->file_descr_index);
+
+				*entry = DirEntry("", -1);
+				iosystem->write_block(dir_fd.data_blocks[i], block);
+				return true;
+			}
+
+			if (i*ENTRIES_IN_BLOCK + j == entries_number - 1)
+				break;
+		}
 	}
-	fd.is_free = true;
-	fd.clearDataBlocks();
-	writeFileDescriptorToIO(fd, entry->file_descr_index);
-	return true;
+
+	return false;
+
+
 }
 
 int FileSystem::open(const std::string & i_file_name)
@@ -167,22 +185,25 @@ bool FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 	if (i_count > fd.file_size - entry->cur_pos) local_count = fd.file_size - entry->cur_pos;
 	else local_count = i_count;
 
+	size_t have_written = 0;
+
 	while (true) {
 
 		size_t buffer_pos = entry->cur_pos % Sector::BLOCK_SIZE;
 		size_t buffer_space = Sector::BLOCK_SIZE - buffer_pos;
 
 		if (local_count <= buffer_space) {
-			std::memcpy(i_mem_area, entry->buffer + buffer_pos, local_count);
+			std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, local_count);
 			entry->cur_pos += local_count;
-			return i_count <= fd.file_size - entry->cur_pos;
+			return true;
 		}
 
-		std::memcpy(i_mem_area, entry->buffer + buffer_pos, buffer_space);
+		std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, buffer_space);
 		size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-		//iosystem->write_block(block_number, entry->buffer);
+		iosystem->write_block(block_number, entry->buffer);
 		iosystem->read_block(block_number + 1, entry->buffer);
 		entry->cur_pos += buffer_space;
+		have_written += buffer_space;
 		local_count -= buffer_space;
 
 		if (entry->cur_pos >= fd.file_size) {
@@ -454,26 +475,4 @@ int FileSystem::findFileDescriptor(const std::string & i_file_name)
   }
 
   return -1;
-}
-
-FileSystem::DirEntry* FileSystem::findDirEntry(const std::string & i_file_name)
-{
-	FileDescriptor dir_fd = getFileDescriptor(0);
-	size_t entries_number = dir_fd.file_size / sizeof(DirEntry);
-
-	for (int i = 0; i <= dir_fd.getLastBlockIndex(); i++) {
-		char block[Sector::BLOCK_SIZE];
-		iosystem->read_block(dir_fd.data_blocks[i], block);
-
-		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
-			DirEntry* entry = (DirEntry*)block + j;
-			if (strcmp(entry->file_name, i_file_name.c_str()) == 0)
-				return entry;
-
-			if (i*ENTRIES_IN_BLOCK + j == entries_number - 1)
-				break;
-		}
-	}
-
-	return nullptr;
 }
