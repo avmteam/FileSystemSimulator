@@ -1,28 +1,20 @@
 #include "stdafx.h"
 #include "FileSystem.h"
+#include "../IOSystem/IOSystem.h"
 
 
-FileSystem::FileSystem(IOSystem* i_iosystem) :
-  iosystem(i_iosystem),
+FileSystem::FileSystem() :
+  iosystem(new IOSystem()),
   oft(new OpenFileTable())
 {
-  // init bitmap with true (is_free)
-  char bitmap[Sector::BLOCK_SIZE];
-  std::memset(bitmap, true, Sector::BLOCK_SIZE);
-  for (size_t i = 0; i < BITMAP_BLOCKS_NUMBER; i++)
-    iosystem->write_block(i, bitmap);
+  init();
+}
 
-  // init file descriptors with is_free = true
-  char block[Sector::BLOCK_SIZE];
-  for (size_t i = 0; i < FDS_IN_BLOCK; i++) {
-    FileDescriptor* fd = (FileDescriptor*)block + i;
-    *fd = FileDescriptor(true);
-  }
-  for (size_t i = BITMAP_BLOCKS_NUMBER; i < FIRST_DATA_BLOCK_INDEX; i++)
-    iosystem->write_block(i, block);
-
-  // dir file descriptor (index 0) is not free
-  writeFileDescriptorToIO(FileDescriptor(false), 0);
+FileSystem::FileSystem(IOSystem* i_iosystem) :
+	iosystem(i_iosystem),
+	oft(new OpenFileTable())
+{
+  init();
 }
 
 
@@ -61,7 +53,7 @@ bool FileSystem::destroy(const std::string & i_file_name)
 	
 	FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
 	for (int i = 0; i <= fd.getLastBlockIndex; i++) {
-		setBit(fd.data_blocks[i], true);
+		if(!setBit(fd.data_blocks[i], true)) return false;
 	}
 	fd.is_free = true;
 	return true;
@@ -106,6 +98,7 @@ bool FileSystem::close(size_t i_index)
   oft->freeEntry(i_index);
   return true;
 }
+
 
 bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 {
@@ -241,7 +234,8 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 			if (entry->file_name == "")
 			    continue;
 
-			FileDescriptor fd = findFileDescriptor(entry->file_name);
+      // findFileDescriptor returns index of found file descriptor
+			FileDescriptor fd = getFileDescriptor(findFileDescriptor(entry->file_name));
 
 			FileInfo fi(entry->file_name, fd.file_size);
 
@@ -253,6 +247,23 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 	}
 
 	return files;
+}
+
+void FileSystem::init()
+{
+  // init bitmap with true (is_free)
+  char bitmap[Sector::BLOCK_SIZE];
+  std::memset(bitmap, true, Sector::BLOCK_SIZE);
+  for (size_t i = 0; i < BITMAP_BLOCKS_NUMBER; i++)
+    iosystem->write_block(i, bitmap);
+
+  // init file descriptors with is_free = true
+  FileDescriptor block[FDS_IN_BLOCK];
+  for (size_t i = BITMAP_BLOCKS_NUMBER; i < FIRST_DATA_BLOCK_INDEX; i++)
+    iosystem->write_block(i, (char*)block);
+
+  // dir file descriptor (index 0) is not free
+  writeFileDescriptorToIO(FileDescriptor(false), 0);
 }
 
 int FileSystem::findFreeFileDescriptor()
@@ -356,7 +367,7 @@ bool FileSystem::writeFileDescriptorToIO(const FileDescriptor& i_fd, size_t i_in
   FileDescriptor* fd = (FileDescriptor*)block + fd_number;
 
   *fd = i_fd;
-  iosystem->write_block(i_index, block);
+  iosystem->write_block(first_fd_index + block_number, block);
 
   return true;
 }

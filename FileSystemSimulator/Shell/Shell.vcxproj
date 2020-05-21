@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Shell.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -161,10 +162,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Shell.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FileSystem\FileSystem.vcxproj">
       <Project>{ac9f58a9-4730-49cd-991b-028155683d3e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\IOSystem\IOSystem.vcxproj">
+      <Project>{bc33ae28-2946-4983-812c-f3b435ed30d5}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
