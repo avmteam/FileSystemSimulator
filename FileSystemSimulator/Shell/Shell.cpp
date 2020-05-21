@@ -104,10 +104,10 @@ int Shell::parseCommand(string i_command_string)
 
 	if (i_command_string.substr(0, 2) == directory_command) {
 
-		cout << "All files: ";
+		cout << "All files:\n";
 		for (FileSystem::FileInfo fi : filesystem->directory()) {
 
-			cout << fi.file_name << ", " << fi.file_length << "b" << endl;
+			cout << fi.file_name << ", " << fi.file_length << " bytes" << endl;
 		}
 	}
 
@@ -132,7 +132,7 @@ void Shell::printOpenCommandResult(const std::string & i_file_name)
 {
 	int key = filesystem->open(i_file_name);
 	if (key != -1)
-		cout << "Your key for file " << "\"" << i_file_name << "\"" << key << endl;
+		cout << "Your key for file " << "\"" << i_file_name << "\" is " << key << endl;
 	else
 		cout << "Error occured while trying to open requested file.\n";
 }
@@ -241,7 +241,7 @@ string Shell::getIWord(string i_command_string, int index)
 		while (i_command_string[i] != ' ' && i < i_command_string.length())
 			word += i_command_string[i++];
 
-		if (!i || i == i_command_string.length())
+		if (!i || (count != index && i_command_string.length() == i))
 			throw std::invalid_argument("invalid word index");
 
 		i++;
