@@ -107,7 +107,7 @@ int Shell::parseCommand(string i_command_string)
 		cout << "All files: ";
 		for (FileSystem::FileInfo fi : filesystem->directory()) {
 
-			cout << "Name: " << fi.file_name << ", length: " << fi.file_length << endl;
+			cout << fi.file_name << ", " << fi.file_length << "b" << endl;
 		}
 	}
 
