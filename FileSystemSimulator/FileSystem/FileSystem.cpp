@@ -56,6 +56,8 @@ bool FileSystem::destroy(const std::string & i_file_name)
 		if(!setBit(fd.data_blocks[i], true)) return false;
 	}
 	fd.is_free = true;
+	fd.clearDataBlocks();
+	writeFileDescriptorToIO(fd, entry->file_descr_index);
 	return true;
 }
 
