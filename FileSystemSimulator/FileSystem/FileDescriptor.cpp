@@ -2,10 +2,15 @@
 #include "FileDescriptor.h"
 
 
+FileDescriptor::FileDescriptor()
+{
+  clearDataBlocks();
+}
+
 FileDescriptor::FileDescriptor(bool i_is_free) :
   is_free(i_is_free)
 {
-  std::memset(data_blocks, -1, MAX_DATA_BLOCKS);
+  clearDataBlocks();
 }
 
 bool FileDescriptor::isFull(){
@@ -27,7 +32,13 @@ bool FileDescriptor::addBlock(size_t i_index) {
   if (isFull())
     return false;
 
-  size_t last_index = getLastBlockIndex();
+  int last_index = getLastBlockIndex();
   data_blocks[last_index + 1] = i_index;
   return true;
+}
+
+void FileDescriptor::clearDataBlocks()
+{
+  for (size_t i = 0; i < MAX_DATA_BLOCKS; i++)
+    data_blocks[i] = -1;
 }
