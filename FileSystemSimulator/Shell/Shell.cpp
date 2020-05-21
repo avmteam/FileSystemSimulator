@@ -105,7 +105,11 @@ int Shell::parseCommand(string i_command_string)
 
 	if (i_command_string.substr(0, 2) == directory_command) {
 
+		for (FileSystem::FileInfo fi : filesystem->directory()) {
 
+			cout << "File name: " << fi.file_name << endl <<
+				"File length: " << fi.file_length << endl;
+		}
 	}
 
 	return -1;
