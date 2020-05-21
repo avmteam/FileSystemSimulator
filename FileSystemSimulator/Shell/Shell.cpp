@@ -11,8 +11,8 @@ Shell::Shell(FileSystem* i_filesystem)
 
 Shell::Shell()
 {
-	FileSystem filesys;
-	filesystem = &filesys;
+	//FileSystem filesys;
+	filesystem = new FileSystem();//&filesys;
 }
 
 Shell::~Shell()
