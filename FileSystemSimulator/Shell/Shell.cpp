@@ -28,7 +28,7 @@ void Shell::printHelp()
 		"returns opened file key, use it to read, write and lseek through the file\n";
 	cout << "close file - " + close_command + " <key>\n";
 	cout << "read from file - " + read_command + " <key> <number_of_characters_to_read>\n";
-	cout << "write to file - " + write_command + " <key> <text> <number_of_characters_to_write>\n";
+	cout << "write to file - " + write_command + " <key> <text>\n";
 	cout << "lseek in file - " + lseek_command + " <key> <position>\n";
 	cout << "list all files on disk - " + directory_command + "\n";
 	cout << "exit simulator - " + exit_command + "\n\n";
@@ -91,8 +91,7 @@ int Shell::parseCommand(string i_command_string)
 		i_command_string.erase(0, 3);
 		int key = getKeyFromCommandString(i_command_string);
 		string text = getIWord(i_command_string, 2);
-		int number_of_characters = stoi(getIWord(i_command_string, 3));
-		printWriteCommandResult(key, const_cast<char*>(text.c_str()), number_of_characters);
+		printWriteCommandResult(key, const_cast<char*>(text.c_str()), text.length());
 	}
 
 	if (i_command_string.substr(0, 2) == lseek_command) {
@@ -105,10 +104,10 @@ int Shell::parseCommand(string i_command_string)
 
 	if (i_command_string.substr(0, 2) == directory_command) {
 
+		cout << "All files: ";
 		for (FileSystem::FileInfo fi : filesystem->directory()) {
 
-			cout << "File name: " << fi.file_name << endl <<
-				"File length: " << fi.file_length << endl;
+			cout << "Name: " << fi.file_name << ", length: " << fi.file_length << endl;
 		}
 	}
 
@@ -238,10 +237,11 @@ string Shell::getIWord(string i_command_string, int index)
 
 		word = "";
 
-		while (i_command_string[i] != ' ')
+		// TODO: fix so that we cat write white spaces to file
+		while (i_command_string[i] != ' ' && i < i_command_string.length())
 			word += i_command_string[i++];
 
-		if (!i) 
+		if (!i || i == i_command_string.length())
 			throw std::invalid_argument("invalid word index");
 
 		i++;
