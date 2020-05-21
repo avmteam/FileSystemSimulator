@@ -52,7 +52,7 @@ bool FileSystem::destroy(const std::string & i_file_name)
 	std::memcpy(entry->file_name, destroyed_file_name.c_str(), DirEntry::MAX_FILE_NAME_LENGTH);
 	
 	FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
-	for (int i = 0; i <= fd.getLastBlockIndex; i++) {
+	for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
 		if(!setBit(fd.data_blocks[i], true)) return false;
 	}
 	fd.is_free = true;
