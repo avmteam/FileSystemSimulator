@@ -49,6 +49,7 @@ public:
   std::vector<FileInfo> directory();
 
 private:
+  void init();
   int findFreeFileDescriptor();
   bool recordFileToDir(const std::string & i_file_name, size_t i_fd_index);
   FileDescriptor getFileDescriptor(size_t i_index);
