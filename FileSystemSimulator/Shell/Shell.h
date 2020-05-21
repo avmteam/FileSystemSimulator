@@ -5,6 +5,7 @@
 class Shell
 {
 public:
+	
 	const std::string read_command = "rd";
 	const std::string write_command = "wr";
 	const std::string create_command = "cr";
@@ -45,7 +46,7 @@ private:
 
 	bool isValidCommandName(string i_command_name);
 	int getKeyFromCommandString(string i_command_string);
-	string getIWord(string i_command_string, int index);
+	static string getIWord(string i_command_string, int index);
 
 private:
 
