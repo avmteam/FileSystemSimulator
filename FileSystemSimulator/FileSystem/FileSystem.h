@@ -43,9 +43,9 @@ public:
   bool destroy(const std::string& i_file_name);
   int open(const std::string& i_file_name);
   bool close(size_t index);
-  bool read(size_t index, char* mem_area, size_t count);
-  bool write(size_t index, char* mem_area, size_t count);
-  bool lseek(size_t index, size_t pos);
+  int read(size_t index, char* mem_area, size_t count);
+  int write(size_t index, char* mem_area, size_t count);
+  size_t lseek(size_t index, size_t pos);
   std::vector<FileInfo> directory();
 
 private:

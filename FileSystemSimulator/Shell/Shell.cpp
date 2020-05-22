@@ -28,7 +28,8 @@ void Shell::printHelp()
 		"returns opened file key, use it to read, write and lseek through the file\n";
 	cout << "close file - " + close_command + " <key>\n";
 	cout << "read from file - " + read_command + " <key> <number_of_characters_to_read>\n";
-	cout << "write to file - " + write_command + " <key> <text>\n";
+	cout << "write to file 1st variant - " + write_command + " <key> <text>\n";
+	cout << "write to file 2nd variant - " + write_command + " <key> <character> <count>\n";
 	cout << "lseek in file - " + lseek_command + " <key> <position>\n";
 	cout << "list all files on disk - " + directory_command + "\n";
 	cout << "exit simulator - " + exit_command + "\n\n";
@@ -75,13 +76,21 @@ int Shell::parseCommand(string i_command_string)
 
 		i_command_string.erase(0, 3);
 		int key = getKeyFromCommandString(i_command_string);
+		if (key == -1) {
+			cout << "Invalid key format.\n";
+			return -1;
+		}
 		printCloseCommandResult(key);
 	}
 
 	if (i_command_string.substr(0, 2) == read_command) {
 
 		i_command_string.erase(0, 3);
-		int key = stoi(getIWord(i_command_string, 1));
+		int key = getKeyFromCommandString(i_command_string);
+		if (key == -1) {
+			cout << "Invalid key format.\n";
+			return -1;
+		}
 		int number_of_chars = stoi(getIWord(i_command_string, 2));
 		printReadCommandResult(key, number_of_chars);
 	}
@@ -90,16 +99,51 @@ int Shell::parseCommand(string i_command_string)
 
 		i_command_string.erase(0, 3);
 		int key = getKeyFromCommandString(i_command_string);
+		if (key == -1) {
+			cout << "Invalid key format.\n";
+			return -1;
+		}
 		string text = getIWord(i_command_string, 2);
+		if (text.length() == 1) {
+
+			string count_string = getIWord(i_command_string, 3);
+
+			if (count_string != "") {
+
+				try {
+
+					int count = stoi(count_string);
+
+					string character = text;
+					for (int i = 0; i < count - 1; ++i)
+						text += character;
+				}
+				catch (invalid_argument e1) {
+
+					cout << "Invalid count.\n";
+					return -1;
+				}
+			}
+		}
 		printWriteCommandResult(key, const_cast<char*>(text.c_str()), text.length());
 	}
 
 	if (i_command_string.substr(0, 2) == lseek_command) {
 
-		i_command_string.erase(0, 3);
+		i_command_string.erase(0, 3); 
 		int key = getKeyFromCommandString(i_command_string);
-		int pos = stoi(getIWord(i_command_string, 2));
-		printLseekCommandResult(key, pos);
+		if (key == -1) {
+			cout << "Invalid key format.\n";
+			return -1;
+		}
+		try {
+			int pos = stoi(getIWord(i_command_string, 2));
+			printLseekCommandResult(key, pos);
+		}
+		catch (invalid_argument e) {
+			cout << "Invalid position.\n";
+			return -1;
+		}
 	}
 
 	if (i_command_string.substr(0, 2) == directory_command) {
@@ -107,7 +151,7 @@ int Shell::parseCommand(string i_command_string)
 		cout << "All files:\n";
 		for (FileSystem::FileInfo fi : filesystem->directory()) {
 
-			cout << fi.file_name << ", " << fi.file_length << " bytes" << endl;
+			cout << fi.file_name << ", " << fi.file_length << " bytes." << endl;
 		}
 	}
 
@@ -117,7 +161,7 @@ int Shell::parseCommand(string i_command_string)
 void Shell::printCreateCommandResult(const std::string & i_file_name)
 {
 	if (filesystem->create(i_file_name))
-		cout << "File \"" + i_file_name + "\" created successfully.\n";
+		cout << "File \"" + i_file_name + "\" created.\n";
 	else
 		cout << "File creation failure.\n";
 }
@@ -126,6 +170,8 @@ void Shell::printDestroyCommandResult(const std::string & i_file_name)
 {
 	if (!filesystem->destroy(i_file_name))
 		cout << "Error occured while trying to destroy requested file.\n";
+	else
+		cout << "File " << i_file_name << " destroyed.\n";
 }
 
 void Shell::printOpenCommandResult(const std::string & i_file_name)
@@ -137,34 +183,45 @@ void Shell::printOpenCommandResult(const std::string & i_file_name)
 		cout << "Error occured while trying to open requested file.\n";
 }
 
-void Shell::printCloseCommandResult(size_t index)
+void Shell::printCloseCommandResult(size_t i_index)
 {
-	if (!filesystem->close(index)) 
-		cout << "Error occured while trying to close requested file";
+	if (!filesystem->close(i_index))
+		cout << "Error occured while trying to close requested file.\n";
+	else
+		cout << "File " << i_index << " closed.\n";
 }
 
-void Shell::printReadCommandResult(size_t index, size_t count)
+void Shell::printReadCommandResult(size_t i_index, size_t i_count)
 {
-	char* mem_area = new char[count + 1];
-	if (!filesystem->read(index, mem_area, count))
+	char* mem_area = new char[i_count + 1];
+	int bytes_read = filesystem->read(i_index, mem_area, i_count);
+	if (bytes_read == -1)
 		cout << "Error occured while trying to read requested file.\n";
 	else {
-		mem_area[count] = '\0';
+		mem_area[bytes_read + 1] = '\0';
 		cout << "Read from file: " << mem_area << endl;
 	}
 	delete[] mem_area;
 }
 
-void Shell::printWriteCommandResult(size_t index, char * mem_area, size_t count)
+void Shell::printWriteCommandResult(size_t i_index, char * i_mem_area, size_t i_count)
 {
-	if (!filesystem->write(index, mem_area, count))
-		cout << "Error occured while trying to write to requested file.\n";
+	int bytes = filesystem->write(i_index, i_mem_area, i_count);
+	if (bytes == -1)
+		cout << "Invalid file key.\n";
+	else if (bytes == -2)
+		cout << "New block allocation failed.\n";
+	else 
+		cout << i_count << (i_count == 1 ? " byte" : " bytes") << " written to file.\n";
 }
 
-void Shell::printLseekCommandResult(size_t index, size_t pos)
+void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 {
-	if (!filesystem->lseek(index, pos))
+	int pos = filesystem->lseek(i_index, i_pos);
+	if (pos == -1)
 		cout << "Error occured while trying to lseek through requested file.\n";
+	else
+		cout << "Current position in " << pos << endl;
 }
 
 void Shell::filenameLengthExceededTestCase()
@@ -225,18 +282,28 @@ bool Shell::isValidCommandName(string i_command_name)
 
 int Shell::getKeyFromCommandString(string i_command_string)
 {
-	return(stoi(getIWord(i_command_string, 1)));
+	string key_string = getIWord(i_command_string, 1);
+
+	try {
+
+		int key = stoi(key_string);
+		return key;
+	}
+	catch (invalid_argument e) {
+
+		return -1;
+	}
 }
 
 // returns word number index counting from 1
-string Shell::getIWord(string i_command_string, int index)
+string Shell::getIWord(string i_command_string, int i_index)
 {
 	int count = 0;
 	size_t i = 0;
 
 	string word = "";
 
-	while (count++ != index) {
+	while (count++ != i_index) {
 
 		word = "";
 
@@ -244,8 +311,9 @@ string Shell::getIWord(string i_command_string, int index)
 		while (i_command_string[i] != ' ' && i < i_command_string.length())
 			word += i_command_string[i++];
 
-		if (!i || (count != index && i_command_string.length() == i))
-			throw std::invalid_argument("invalid word index");
+		if (!i || (count != i_index && i_command_string.length() == i))
+			//throw invalid_argument("invalid word index");
+			return "";
 
 		i++;
 	}
