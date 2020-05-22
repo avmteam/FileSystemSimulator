@@ -145,11 +145,14 @@ void Shell::printCloseCommandResult(size_t index)
 
 void Shell::printReadCommandResult(size_t index, size_t count)
 {
-	char* mem_area = new char[0];
+	char* mem_area = new char[count + 1];
 	if (!filesystem->read(index, mem_area, count))
 		cout << "Error occured while trying to read requested file.\n";
-	else
+	else {
+		mem_area[count] = '\0';
 		cout << "Read from file: " << mem_area << endl;
+	}
+	delete[] mem_area;
 }
 
 void Shell::printWriteCommandResult(size_t index, char * mem_area, size_t count)
