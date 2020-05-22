@@ -45,7 +45,7 @@ void IOSystem::write_block(int blockNumber, char * p)
 {
 	if (blockNumber < 0 || blockNumber >= Disk::NUMBER_OF_BLOCKS)
 		throw std::invalid_argument("invalid blocknumber");
-	//if (!p) throw std::invalid_argument("invalid pointer");
+	if (!p) throw std::invalid_argument("invalid pointer");
 
 
 	int* blockLocation = new int[4];
