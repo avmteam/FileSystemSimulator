@@ -55,6 +55,7 @@ bool FileSystem::destroy(const std::string & i_file_name)
 		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
 			DirEntry* entry = (DirEntry*)block + j;
 			if (strcmp(entry->file_name, i_file_name.c_str()) == 0) {
+				if (oft->checkOpenFD(entry->file_descr_index)) return false;
 				
 				FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
 				for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
@@ -75,7 +76,6 @@ bool FileSystem::destroy(const std::string & i_file_name)
 	}
 
 	return false;
-
 
 }
 

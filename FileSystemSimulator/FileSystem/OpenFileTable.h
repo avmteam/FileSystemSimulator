@@ -22,6 +22,7 @@ public:
   OFTEntry* getEntry(size_t i_index);
   bool freeEntry(size_t i_index);
   bool isExist(size_t i_index);
+  bool checkOpenFD(size_t fd_index);
 
 private:
   OFTEntry entries[MAX_TABLE_LENGTH];
