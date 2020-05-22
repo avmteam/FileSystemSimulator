@@ -148,8 +148,10 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     if (i_count <= buffer_space) {
       std::memcpy(entry->buffer + buffer_pos, i_mem_area, i_count);
       entry->cur_pos += i_count;
-	  fd.file_size += i_count;
-	  writeFileDescriptorToIO(fd, entry->fd_index);
+	  if (entry->cur_pos > fd.file_size) {
+		  fd.file_size = entry->cur_pos;
+		  writeFileDescriptorToIO(fd, entry->fd_index);
+	  }
       return true;
     }
 
@@ -158,8 +160,10 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
     i_count -= buffer_space;
-	  fd.file_size += buffer_space;
-	  writeFileDescriptorToIO(fd, entry->fd_index);
+	if (entry->cur_pos > fd.file_size) {
+		fd.file_size = entry->cur_pos;
+		writeFileDescriptorToIO(fd, entry->fd_index);
+	}
 
     if (entry->cur_pos >= fd.file_size) {
       fd.file_size = entry->cur_pos;
