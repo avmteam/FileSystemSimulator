@@ -156,15 +156,10 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     }
 
     std::memcpy(entry->buffer + buffer_pos, i_mem_area, buffer_space);
-    size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-    iosystem->write_block(block_number, entry->buffer);
+	size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
+	iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
     i_count -= buffer_space;
-	if (entry->cur_pos > fd.file_size) {
-		fd.file_size = entry->cur_pos;
-		writeFileDescriptorToIO(fd, entry->fd_index);
-	}
-
     if (entry->cur_pos >= fd.file_size) {
       fd.file_size = entry->cur_pos;
       writeFileDescriptorToIO(fd, entry->fd_index);
@@ -208,7 +203,7 @@ bool FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 
 		std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, buffer_space);
 		size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-		iosystem->write_block(block_number, entry->buffer);
+		//iosystem->write_block(block_number, entry->buffer);
 		iosystem->read_block(block_number + 1, entry->buffer);
 		entry->cur_pos += buffer_space;
 		have_written += buffer_space;
