@@ -258,7 +258,7 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 
 			DirEntry* entry = (DirEntry*)block + j;
 			
-			if (entry->file_name == "")
+			if (strcmp(entry->file_name, "") == 0)
 			    continue;
 
       // findFileDescriptor returns index of found file descriptor
