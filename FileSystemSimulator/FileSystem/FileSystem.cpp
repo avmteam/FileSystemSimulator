@@ -106,7 +106,7 @@ bool FileSystem::close(size_t i_index)
     return false;
   FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
-  size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
+  int block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
   if (entry->cur_pos > 0)
     iosystem->write_block(block_number, entry->buffer);
 
@@ -134,6 +134,10 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     bool success = allocateDataBlock(entry->fd_index);
     if (!success)
       return false;
+
+    // update fd after allocating new block
+    fd = getFileDescriptor(entry->fd_index);
+    writeFileDescriptorToIO(fd, entry->fd_index);
   }
 
   while (true) {
@@ -154,8 +158,8 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
     i_count -= buffer_space;
-	fd.file_size += buffer_space;
-	writeFileDescriptorToIO(fd, entry->fd_index);
+	  fd.file_size += buffer_space;
+	  writeFileDescriptorToIO(fd, entry->fd_index);
 
     if (entry->cur_pos >= fd.file_size) {
       fd.file_size = entry->cur_pos;
@@ -404,6 +408,7 @@ bool FileSystem::allocateDataBlock(size_t i_index)
   if (i_index >= FD_NUMBER)
     return false;
 
+  // db_index is global block index
   int db_index = findFreeDataBlock();
   if (db_index == -1)
     return false;
@@ -427,7 +432,7 @@ int FileSystem::findFreeDataBlock()
 
     for (size_t j = 0; j < Sector::BLOCK_SIZE; j++) {
       bool* bit = (bool*)block + j;
-      size_t index = i * Sector::BLOCK_SIZE + j;
+      size_t index = i * Sector::BLOCK_SIZE + j + FIRST_DATA_BLOCK_INDEX;
 
       if (*bit)
         return (index >= Disk::NUMBER_OF_BLOCKS ? -1 : index);
@@ -439,11 +444,13 @@ int FileSystem::findFreeDataBlock()
 
 bool FileSystem::setBit(size_t i_index, bool i_is_free)
 {
-  if (i_index >= Disk::NUMBER_OF_BLOCKS)
+  int index = i_index - FIRST_DATA_BLOCK_INDEX;
+
+  if (index < 0 || index >= DATA_BLOCKS_NUMBER)
     return false;
 
-  size_t block_number = i_index / Sector::BLOCK_SIZE;
-  size_t block_index = i_index % Sector::BLOCK_SIZE;
+  size_t block_number = index / Sector::BLOCK_SIZE;
+  size_t block_index = index % Sector::BLOCK_SIZE;
 
   char block[Sector::BLOCK_SIZE];
   iosystem->read_block(block_number, block);
@@ -451,7 +458,7 @@ bool FileSystem::setBit(size_t i_index, bool i_is_free)
   bool* bit = (bool*)block + block_index;
   *bit = i_is_free;
 
-  iosystem->write_block(i_index, block);
+  iosystem->write_block(block_number, block);
   return true;
 }
 
