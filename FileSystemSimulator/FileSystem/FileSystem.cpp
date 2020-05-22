@@ -260,8 +260,10 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 
 		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
 
-			DirEntry* entry = (DirEntry*)block + j;
-			
+      if (i * ENTRIES_IN_BLOCK + j == entries_number)
+        break;
+
+			DirEntry* entry = (DirEntry*)block + j;		
 			if (strcmp(entry->file_name, "") == 0)
 			    continue;
 
@@ -269,11 +271,7 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 			FileDescriptor fd = getFileDescriptor(findFileDescriptor(entry->file_name));
 
 			FileInfo fi(entry->file_name, fd.file_size);
-
 			files.push_back(fi);
-
-			if (i * ENTRIES_IN_BLOCK + j == entries_number - 1)
-				break;
 		}
 	}
 
