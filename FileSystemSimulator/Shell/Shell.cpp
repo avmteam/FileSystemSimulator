@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Shell.h"
 #include <iostream>
+#include <Windows.h>
 
 using namespace std;
 
@@ -48,7 +49,7 @@ void Shell::printTestCases()
 	cout << "\t5\t" << "lseek further than end of file\n";
 	cout << "\t6\t" << "exceed maximum file size\n";
 	cout << "\t7\t" << "write on border of data blocks\n";
-	//cout << "\t8\t" << "test case 8\n";
+	cout << "\t8\t" << "create max number of files\n";
 	//cout << "\t9\t" << "test case 9\n";
 	cout << "\nUsage: test <id>\n";
 }
@@ -78,6 +79,10 @@ int Shell::parseCommand(string i_command_string)
 			cout << "Improper test command.\n";
 			return invalid_command_code;
 		}
+
+		HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 6));
+		cout << "Test: \n\n";
 
 		switch (test_id) {
 
@@ -109,11 +114,18 @@ int Shell::parseCommand(string i_command_string)
 			clean();
 			writeDataOnBlocksBorder();
 			break;
+		case 8:
+			clean();
+			maxFilesNumber();
+			break;
 
 		default:
 			cout << "Test with this id does not exist.\n";
 			break;
 		}
+
+		cout << "\n";
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 8));
 
 		return success_code;
 	}
@@ -427,6 +439,16 @@ void Shell::writeDataOnBlocksBorder()
 
 	parseCommand(close_command + " 0");
 	parseCommand(destroy_command + " f3");
+}
+
+void Shell::maxFilesNumber()
+{
+	cout << "Creating " << FileSystem::FD_NUMBER << " - 1 files...\n";
+
+	for (int i = 1; i < FileSystem::FD_NUMBER; ++i) {
+
+		parseCommand(create_command + to_string(i));
+	}
 }
 
 bool Shell::isValidCommandName(string i_command_name)
