@@ -9,10 +9,10 @@ struct FileDescriptor {
   bool isFull();
   int getLastBlockIndex();
   bool addBlock(size_t i_index);
-  void clearDataBlocks();
+  void clear();
+  bool isFree();
 
-  bool is_free = true;
-  size_t file_size = 0;
+  int file_size = -1; //-1 means its free
   int data_blocks[MAX_DATA_BLOCKS];
 };
 

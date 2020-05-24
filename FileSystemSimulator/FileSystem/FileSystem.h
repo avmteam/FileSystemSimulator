@@ -12,7 +12,7 @@ public:
 
 
   struct DirEntry {
-    static const size_t MAX_FILE_NAME_LENGTH = 16;
+    static const size_t MAX_FILE_NAME_LENGTH = 4;
 
     DirEntry(const std::string& i_file_name, size_t i_index) {
       std::memcpy(file_name, i_file_name.c_str(), MAX_FILE_NAME_LENGTH);
@@ -45,7 +45,7 @@ public:
   bool close(size_t index);
   int read(size_t index, char* mem_area, size_t count);
   int write(size_t index, char* mem_area, size_t count);
-  size_t lseek(size_t index, size_t pos);
+  int lseek(size_t index, size_t pos);
   std::vector<FileInfo> directory();
 
 private:
@@ -63,13 +63,14 @@ private:
   IOSystem* iosystem;
   OpenFileTable* oft;
 
-  static const size_t DATA_BLOCKS_NUMBER = Disk::NUMBER_OF_BLOCKS * Sector::BLOCK_SIZE / (Sector::BLOCK_SIZE + sizeof(FileDescriptor) + 1);
-  static const size_t BITMAP_BLOCKS_NUMBER = DATA_BLOCKS_NUMBER / Sector::BLOCK_SIZE + 1;
-  static const size_t FD_BLOCKS_NUMBER = Disk::NUMBER_OF_BLOCKS - DATA_BLOCKS_NUMBER - BITMAP_BLOCKS_NUMBER;
-  static const size_t FDS_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
-  static const size_t FD_NUMBER = FD_BLOCKS_NUMBER / FDS_IN_BLOCK;
-
-  static const size_t FIRST_DATA_BLOCK_INDEX = Disk::NUMBER_OF_BLOCKS - DATA_BLOCKS_NUMBER;
   static const size_t ENTRIES_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(DirEntry);
+  static const size_t FDS_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
+
+  static const size_t BITMAP_BLOCKS_NUMBER = Disk::NUMBER_OF_BLOCKS / Sector::BLOCK_SIZE;
+  static const size_t FD_NUMBER = ENTRIES_IN_BLOCK * FileDescriptor::MAX_DATA_BLOCKS;
+  static const size_t FD_BLOCKS_NUMBER = FD_NUMBER / FDS_IN_BLOCK;
+
+  static const size_t DATA_BLOCKS_NUMBER = Disk::NUMBER_OF_BLOCKS - BITMAP_BLOCKS_NUMBER - FD_BLOCKS_NUMBER;
+  static const size_t FIRST_DATA_BLOCK_INDEX = BITMAP_BLOCKS_NUMBER + FD_BLOCKS_NUMBER;
 };
 
