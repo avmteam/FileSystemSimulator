@@ -38,11 +38,13 @@ public:
 	void printWriteCommandResult(size_t i_index, char* i_mem_area, size_t i_count);
 	void printLseekCommandResult(size_t i_index, size_t i_pos);
 
-	void filenameLengthExceededTestCase();
-	void invalidFilenameTestCase();
-	void createDestroyOpenFileTestCase();
-	void openAlreadyOpenedFileTestCase();
-	void destroyOpenedFile();
+	void filenameLengthExceeded();
+	void createDestroyOpenFile();
+	void openAlreadyOpenedFile();
+	void destroyOpenedFile(); 
+	void lseekFurtherThanEnd();
+	void exceedMaxFileSize();
+	void writeDataOnBlocksBorder();
 
 private:
 

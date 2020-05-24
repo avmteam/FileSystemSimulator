@@ -44,8 +44,8 @@ void Shell::printTestCases()
 	cout << "\t2\t" << "exceed filename length\n";
 	cout << "\t3\t" << "destroy opened file\n";
 	cout << "\t4\t" << "create destroy opened file\n";
-	//cout << "5\t\t" << "test case 5\n";
-	//cout << "6\t\t" << "test case 6\n";
+	cout << "5\t\t" << "lseek further than end of file\n";
+	cout << "6\t\t" << "exceed maximum file size\n";
 	//cout << "7\t\t" << "test case 7\n";
 	//cout << "8\t\t" << "test case 8\n";
 	//cout << "9\t\t" << "test case 9\n";
@@ -71,17 +71,24 @@ int Shell::parseCommand(string i_command_string)
 		switch (test_id) {
 
 		case 1:
-			openAlreadyOpenedFileTestCase();
+			openAlreadyOpenedFile();
 			break;
 		case 2:
-			filenameLengthExceededTestCase();
+			filenameLengthExceeded();
 			break;
 		case 3:
 			destroyOpenedFile();
 			break;
 		case 4:
-			createDestroyOpenFileTestCase();
+			createDestroyOpenFile();
 			break;
+		case 5:
+			lseekFurtherThanEnd();
+			break;
+		case 6:
+			exceedMaxFileSize();
+			break;
+
 		default:
 			cout << "Test with this id does not exist.\n";
 			break;
@@ -277,36 +284,75 @@ void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 		cout << "Current position in " << pos << endl;
 }
 
-void Shell::filenameLengthExceededTestCase()
+void Shell::filenameLengthExceeded()
 {
 	parseCommand("cr super_super_super_looooooooooooong_file_name");
 }
 
-void Shell::invalidFilenameTestCase()
-{
-	parseCommand("cr \\name\\#@>.txt");
-	parseCommand("cr \\na+dsfd*");
-}
-
-void Shell::createDestroyOpenFileTestCase()
+void Shell::createDestroyOpenFile()
 {
 	parseCommand(create_command + " f");
 	parseCommand(destroy_command + " f");
 	parseCommand(open_command + " f");
 }
 
-void Shell::openAlreadyOpenedFileTestCase()
+void Shell::openAlreadyOpenedFile()
 {
 	parseCommand(create_command + " g");
 	parseCommand(open_command + " g");
 	parseCommand(open_command + " g");
+
+	parseCommand(close_command + " 0");
+	parseCommand(destroy_command + " g");
 }
 
 void Shell::destroyOpenedFile()
 {
-	parseCommand(create_command +" h");
+	parseCommand(create_command + " h");
 	parseCommand(open_command + " h");
 	parseCommand(destroy_command + " h");
+
+	parseCommand(close_command + " 0");
+	parseCommand(destroy_command + " h");
+}
+
+void Shell::lseekFurtherThanEnd()
+{
+	cout << "Note! We assume this file owns descriptor with index 0.\n";
+	parseCommand(create_command + " h");
+	parseCommand(open_command + " h");
+	parseCommand(write_command + " 0 b 5");
+	parseCommand(lseek_command + " 0 5");
+
+	parseCommand(close_command + " 0");
+	parseCommand(destroy_command + " h");
+}
+
+void Shell::exceedMaxFileSize()
+{
+	parseCommand(create_command + " f2");
+	parseCommand(open_command + " f2");
+	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
+	parseCommand(write_command + " 0 b " + to_string(max_size + 1));
+	parseCommand(lseek_command + " 0 0");
+	parseCommand(read_command + " 0 " + to_string(max_size));
+
+	parseCommand(close_command + " 0");
+	parseCommand(destroy_command + " f2");
+}
+
+void Shell::writeDataOnBlocksBorder()
+{
+	parseCommand(create_command + " f3");
+	parseCommand(open_command + " f3");
+	parseCommand(write_command + " 0 b " + to_string(Sector::BLOCK_SIZE));
+	parseCommand(write_command + " 0 c 5");
+
+	parseCommand(lseek_command + " 0 0");
+	parseCommand(read_command + " 0 " + to_string(Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS));
+
+	parseCommand(close_command + " 0");
+	parseCommand(destroy_command + " f3");
 }
 
 bool Shell::isValidCommandName(string i_command_name)
