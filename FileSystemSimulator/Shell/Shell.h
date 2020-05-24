@@ -16,6 +16,9 @@ public:
 	const std::string directory_command = "dr";
 	const std::string help_command = "gh";	// get help
 	const std::string exit_command = "ex";
+	const std::string tests_help_command = "thelp";
+	const std::string clean_command = "clean";
+	
 
 	const int exit_code = 1;
 	const int invalid_command_code = 2;
@@ -27,6 +30,7 @@ public:
 	~Shell();
 
 	void printHelp();
+	void printTestCases();
 	int parseCommand(string i_command_string);
 	void printCreateCommandResult(const std::string& i_file_name);
 	void printDestroyCommandResult(const std::string& i_file_name);
@@ -36,17 +40,20 @@ public:
 	void printWriteCommandResult(size_t i_index, char* i_mem_area, size_t i_count);
 	void printLseekCommandResult(size_t i_index, size_t i_pos);
 
-	void filenameLengthExceededTestCase();
-	void invalidFilenameTestCase();
-	void createDestroyOpenFileTestCase();
-	void openAlreadyOpenedFileTestCase();
-	void destroyOpenedFile();
+	void filenameLengthExceeded();
+	void createDestroyOpenFile();
+	void openAlreadyOpenedFile();
+	void destroyOpenedFile(); 
+	void lseekFurtherThanEnd();
+	void exceedMaxFileSize();
+	void writeDataOnBlocksBorder();
 
 private:
 
 	bool isValidCommandName(string i_command_name);
 	int getKeyFromCommandString(string i_command_string);
 	static string getIWord(string i_command_string, int i_index);
+	void clean();
 
 private:
 
