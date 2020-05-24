@@ -55,6 +55,7 @@ bool FileSystem::destroy(const std::string & i_file_name)
 		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
 			DirEntry* entry = (DirEntry*)block + j;
 			if (strcmp(entry->file_name, i_file_name.c_str()) == 0) {
+				if (oft->checkOpenFD(entry->file_descr_index)) return false;
 				
 				FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
 				for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
@@ -75,7 +76,6 @@ bool FileSystem::destroy(const std::string & i_file_name)
 	}
 
 	return false;
-
 
 }
 
@@ -148,19 +148,18 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     if (i_count <= buffer_space) {
       std::memcpy(entry->buffer + buffer_pos, i_mem_area, i_count);
       entry->cur_pos += i_count;
-	  fd.file_size += i_count;
-	  writeFileDescriptorToIO(fd, entry->fd_index);
+	  if (entry->cur_pos > fd.file_size) {
+		  fd.file_size = entry->cur_pos;
+		  writeFileDescriptorToIO(fd, entry->fd_index);
+	  }
       return true;
     }
 
     std::memcpy(entry->buffer + buffer_pos, i_mem_area, buffer_space);
-    size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-    iosystem->write_block(block_number, entry->buffer);
+	size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
+	iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
     i_count -= buffer_space;
-	  fd.file_size += buffer_space;
-	  writeFileDescriptorToIO(fd, entry->fd_index);
-
     if (entry->cur_pos >= fd.file_size) {
       fd.file_size = entry->cur_pos;
       writeFileDescriptorToIO(fd, entry->fd_index);
@@ -204,7 +203,7 @@ bool FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 
 		std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, buffer_space);
 		size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-		iosystem->write_block(block_number, entry->buffer);
+		//iosystem->write_block(block_number, entry->buffer);
 		iosystem->read_block(block_number + 1, entry->buffer);
 		entry->cur_pos += buffer_space;
 		have_written += buffer_space;
