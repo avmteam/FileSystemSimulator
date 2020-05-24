@@ -44,7 +44,7 @@ void Shell::printTestCases()
 	cout << "\t1\t" << "open already opened file\n";
 	cout << "\t2\t" << "exceed filename length\n";
 	cout << "\t3\t" << "destroy opened file\n";
-	cout << "\t4\t" << "create destroy opened file\n";
+	cout << "\t4\t" << "create destroy open file\n";
 	cout << "\t5\t" << "lseek further than end of file\n";
 	cout << "\t6\t" << "exceed maximum file size\n";
 	cout << "\t7\t" << "write on border of data blocks\n";
@@ -312,6 +312,11 @@ void Shell::filenameLengthExceeded()
 
 void Shell::createDestroyOpenFile()
 {
+	cout << "Commands to call:\n";
+	cout << create_command + " f\n";
+	cout << destroy_command + " f\n";
+	cout << open_command + " f\n";
+	cout << "Results:\n";
 	parseCommand(create_command + " f");
 	parseCommand(destroy_command + " f");
 	parseCommand(open_command + " f");
@@ -319,6 +324,14 @@ void Shell::createDestroyOpenFile()
 
 void Shell::openAlreadyOpenedFile()
 {
+	cout << "Commands to call:\n";
+	cout << create_command + " g\n";
+	cout << open_command + " g\n";
+	cout << open_command + " g\n";
+	cout << close_command + " 0\n";
+	cout << destroy_command + " g\n";
+	cout << "Results:\n";
+
 	parseCommand(create_command + " g");
 	parseCommand(open_command + " g");
 	parseCommand(open_command + " g");
@@ -329,6 +342,14 @@ void Shell::openAlreadyOpenedFile()
 
 void Shell::destroyOpenedFile()
 {
+	cout << "Commands to call:\n";
+	cout << create_command + "h\n";
+	cout << open_command + " h\n";
+	cout << destroy_command + " h\n";
+	cout << close_command + " 0\n";
+	cout << destroy_command + " h\n";
+	cout << "Results:\n";
+
 	parseCommand(create_command + " h");
 	parseCommand(open_command + " h");
 	parseCommand(destroy_command + " h");
@@ -339,7 +360,15 @@ void Shell::destroyOpenedFile()
 
 void Shell::lseekFurtherThanEnd()
 {
-	cout << "Note! We assume this file owns descriptor with index 0.\n";
+	cout << "Commands to call:\n";
+	cout << create_command + "h\n";
+	cout << open_command + " h\n";
+	cout << write_command + " 0 b 5\n";
+	cout << lseek_command + " 0 5\n";
+	cout << close_command + " 0\n";
+	cout << destroy_command + " h\n";
+	cout << "Results:\n";
+
 	parseCommand(create_command + " h");
 	parseCommand(open_command + " h");
 	parseCommand(write_command + " 0 b 5");
@@ -351,11 +380,22 @@ void Shell::lseekFurtherThanEnd()
 
 void Shell::exceedMaxFileSize()
 {
+	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
+
+	cout << "Commands to call:\n";
+	cout << create_command + "f2\n";
+	cout << open_command + " f2\n";
+	cout << write_command + " 0 b " + to_string(max_size + 1) << endl;
+	cout << lseek_command + " 0 0\n";
+	cout << read_command + " 0 " + to_string(max_size) << endl;
+	cout << close_command + " 0\n";
+	cout << destroy_command + " f2\n";
+	cout << "Results:\n";
+
 	parseCommand(create_command + " f2");
 	parseCommand(open_command + " f2");
-	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
 	parseCommand(write_command + " 0 b " + to_string(max_size + 1));
-	parseCommand(lseek_command + " 0 0");
+	parseCommand(write_command + " 0 b " + to_string(max_size + 1));
 	parseCommand(read_command + " 0 " + to_string(max_size));
 
 	parseCommand(close_command + " 0");
@@ -364,13 +404,26 @@ void Shell::exceedMaxFileSize()
 
 void Shell::writeDataOnBlocksBorder()
 {
+	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
+
+	cout << "Commands to call:\n";
+	cout << create_command + "f3\n";
+	cout << open_command + " f3\n";
+	cout << write_command + " 0 b " + to_string(Sector::BLOCK_SIZE) << endl;
+	cout << write_command + " 0 c 5\n";
+	cout << lseek_command + " 0 0\n";
+	cout << read_command + " 0 " + to_string(max_size) << endl;
+	cout << close_command + " 0\n";
+	cout << destroy_command + " f3\n";
+	cout << "Results:\n";
+
 	parseCommand(create_command + " f3");
 	parseCommand(open_command + " f3");
 	parseCommand(write_command + " 0 b " + to_string(Sector::BLOCK_SIZE));
 	parseCommand(write_command + " 0 c 5");
 
 	parseCommand(lseek_command + " 0 0");
-	parseCommand(read_command + " 0 " + to_string(Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS));
+	parseCommand(read_command + " 0 " + to_string(max_size));
 
 	parseCommand(close_command + " 0");
 	parseCommand(destroy_command + " f3");
