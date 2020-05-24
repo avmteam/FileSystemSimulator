@@ -123,13 +123,10 @@ bool FileSystem::close(size_t i_index)
     return false;
   FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
-  int block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-  if (entry->cur_pos > 0)
+  size_t block_index = entry->cur_pos / Sector::BLOCK_SIZE;
+  if (block_index < FileDescriptor::MAX_DATA_BLOCKS) {
+    int block_number = fd.data_blocks[block_index];
     iosystem->write_block(block_number, entry->buffer);
-
-  if (entry->cur_pos > fd.file_size) {
-    fd.file_size = entry->cur_pos;
-    writeFileDescriptorToIO(fd, entry->fd_index);
   }
 
   oft->freeEntry(i_index);
@@ -154,7 +151,6 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 
     // update fd after allocating new block
     fd = getFileDescriptor(entry->fd_index);
-    writeFileDescriptorToIO(fd, entry->fd_index);
   }
 
   size_t have_written = 0;
@@ -177,20 +173,28 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     }
 
     std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, buffer_space);
-	  size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
+
+    size_t block_index = entry->cur_pos / Sector::BLOCK_SIZE;
+	  size_t block_number = fd.data_blocks[block_index];
+
 	  iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
     have_written += buffer_space;
     i_count -= buffer_space;
 
     if (entry->cur_pos > fd.file_size) {
+
       fd.file_size = entry->cur_pos;
       writeFileDescriptorToIO(fd, entry->fd_index);
 
       bool success = allocateDataBlock(entry->fd_index);
       if (!success)
         return -2;
+
+      fd = getFileDescriptor(entry->fd_index);
     }
+
+    iosystem->read_block(fd.data_blocks[block_index + 1], entry->buffer);
   }
 }
 
@@ -247,7 +251,7 @@ int FileSystem::lseek(size_t i_index, size_t i_pos)
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
-	if (i_pos > fd.file_size)
+	if (i_pos >= fd.file_size)
 		return -1;
 
 	size_t cur_pos = entry->cur_pos;
@@ -258,8 +262,9 @@ int FileSystem::lseek(size_t i_index, size_t i_pos)
 	// check if new position is within the current data block 
 	if (cur_block != new_block)
 	{
-		iosystem->write_block(cur_block, entry->buffer);
-		iosystem->read_block(new_block, entry->buffer);
+    if (cur_block != FileDescriptor::MAX_DATA_BLOCKS)
+		  iosystem->write_block(fd.data_blocks[cur_block], entry->buffer);
+		iosystem->read_block(fd.data_blocks[new_block], entry->buffer);
 	}
 
 	entry->cur_pos = i_pos;
