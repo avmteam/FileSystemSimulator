@@ -17,6 +17,8 @@ public:
 	const std::string help_command = "gh";	// get help
 	const std::string exit_command = "ex";
 	const std::string tests_help_command = "thelp";
+	const std::string clean_command = "clean";
+	
 
 	const int exit_code = 1;
 	const int invalid_command_code = 2;
@@ -51,6 +53,7 @@ private:
 	bool isValidCommandName(string i_command_name);
 	int getKeyFromCommandString(string i_command_string);
 	static string getIWord(string i_command_string, int i_index);
+	void clean();
 
 private:
 

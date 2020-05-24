@@ -33,6 +33,7 @@ void Shell::printHelp()
 	cout << "lseek in file - " + lseek_command + " <key> <position>\n";
 	cout << "list all files on disk - " + directory_command + "\n";
 	cout << "list all test cases - " + tests_help_command + "\n";
+	cout << "clean file system - " + clean_command + "\n";
 	cout << "exit simulator - " + exit_command + "\n\n";
 }
 
@@ -44,16 +45,23 @@ void Shell::printTestCases()
 	cout << "\t2\t" << "exceed filename length\n";
 	cout << "\t3\t" << "destroy opened file\n";
 	cout << "\t4\t" << "create destroy opened file\n";
-	cout << "5\t\t" << "lseek further than end of file\n";
-	cout << "6\t\t" << "exceed maximum file size\n";
-	cout << "7\t\t" << "write on border of data blocks\n";
-	//cout << "8\t\t" << "test case 8\n";
-	//cout << "9\t\t" << "test case 9\n";
+	cout << "\t5\t" << "lseek further than end of file\n";
+	cout << "\t6\t" << "exceed maximum file size\n";
+	cout << "\t7\t" << "write on border of data blocks\n";
+	//cout << "\t8\t" << "test case 8\n";
+	//cout << "\t9\t" << "test case 9\n";
 	cout << "\nUsage: test <id>\n";
 }
 
 int Shell::parseCommand(string i_command_string)
 {
+	if (i_command_string == clean_command) {
+
+		clean();
+		cout << "Old file system deleted, new file system created.\n";
+		return success_code;
+	}
+
 	if (i_command_string == tests_help_command) {
 
 		printTestCases();
@@ -65,30 +73,40 @@ int Shell::parseCommand(string i_command_string)
 		cout << "You have chosen test #" + i_command_string.substr(5, 6) << endl;
 
 		int test_id = stoi(i_command_string.substr(5, 6));
-		if (i_command_string.length() > 6)
+		if (i_command_string.length() > 6) {
+
 			cout << "Improper test command.\n";
+			return invalid_command_code;
+		}
 
 		switch (test_id) {
 
 		case 1:
+			clean();
 			openAlreadyOpenedFile();
 			break;
 		case 2:
+			clean();
 			filenameLengthExceeded();
 			break;
 		case 3:
+			clean();
 			destroyOpenedFile();
 			break;
 		case 4:
+			clean();
 			createDestroyOpenFile();
 			break;
 		case 5:
+			clean();
 			lseekFurtherThanEnd();
 			break;
 		case 6:
+			clean();
 			exceedMaxFileSize();
 			break;
 		case 7:
+			clean();
 			writeDataOnBlocksBorder();
 			break;
 
@@ -421,4 +439,10 @@ string Shell::getIWord(string i_command_string, int i_index)
 	}
 
 	return word;
+}
+
+void Shell::clean()
+{
+	delete filesystem;
+	filesystem = new FileSystem();
 }
