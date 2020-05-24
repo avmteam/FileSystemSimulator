@@ -126,7 +126,8 @@ bool FileSystem::close(size_t i_index)
   size_t block_index = entry->cur_pos / Sector::BLOCK_SIZE;
   if (block_index < FileDescriptor::MAX_DATA_BLOCKS) {
     int block_number = fd.data_blocks[block_index];
-    iosystem->write_block(block_number, entry->buffer);
+    if (block_number != -1)
+      iosystem->write_block(block_number, entry->buffer);
   }
 
   oft->freeEntry(i_index);
@@ -159,7 +160,7 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     size_t buffer_pos = entry->cur_pos % Sector::BLOCK_SIZE;
     size_t buffer_space = Sector::BLOCK_SIZE - buffer_pos;
 
-    if (i_count <= buffer_space) {
+    if (i_count < buffer_space) {
       std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, i_count);
       entry->cur_pos += i_count;
       have_written += i_count;
@@ -262,7 +263,7 @@ int FileSystem::lseek(size_t i_index, size_t i_pos)
 	// check if new position is within the current data block 
 	if (cur_block != new_block)
 	{
-    if (cur_block != FileDescriptor::MAX_DATA_BLOCKS)
+    if (cur_block != FileDescriptor::MAX_DATA_BLOCKS && fd.data_blocks[cur_block] != -1)
 		  iosystem->write_block(fd.data_blocks[cur_block], entry->buffer);
 		iosystem->read_block(fd.data_blocks[new_block], entry->buffer);
 	}
