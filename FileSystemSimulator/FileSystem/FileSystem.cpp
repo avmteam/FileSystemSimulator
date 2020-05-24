@@ -120,20 +120,20 @@ bool FileSystem::close(size_t i_index)
 }
 
 
-bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
+int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 {
   if (i_count == 0)
-    return true;
+    return i_count;
 
   OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
   if (!entry)
-    return false;
+    return -1;
 
   FileDescriptor fd = getFileDescriptor(entry->fd_index);
   if (fd.file_size == 0) {
     bool success = allocateDataBlock(entry->fd_index);
     if (!success)
-      return false;
+      return -2; // failed to allocate block code
 
     // update fd after allocating new block
     fd = getFileDescriptor(entry->fd_index);
@@ -148,6 +148,7 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     if (i_count <= buffer_space) {
       std::memcpy(entry->buffer + buffer_pos, i_mem_area, i_count);
       entry->cur_pos += i_count;
+
 	  if (entry->cur_pos > fd.file_size) {
 		  fd.file_size = entry->cur_pos;
 		  writeFileDescriptorToIO(fd, entry->fd_index);
@@ -166,23 +167,23 @@ bool FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 
       bool success = allocateDataBlock(entry->fd_index);
       if (!success)
-        return false;
+        return -2;
     }
   }
 }
 
-bool FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
+int FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 {
 	if (i_count == 0)
-		return true;
+		return i_count;
 
 	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
 	if (!entry)
-		return false;
+		return -1;
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 	if (fd.file_size == 0) 
-		return false;
+		return -1;
 
 	int local_count;
 	if (i_count > fd.file_size - entry->cur_pos) local_count = fd.file_size - entry->cur_pos;
@@ -198,7 +199,7 @@ bool FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 		if (local_count <= buffer_space) {
 			std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, local_count);
 			entry->cur_pos += local_count;
-			return true;
+			return entry->cur_pos - 1;
 		}
 
 		std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, buffer_space);
@@ -210,23 +211,23 @@ bool FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 		local_count -= buffer_space;
 
 		if (entry->cur_pos >= fd.file_size) {
-			return false;
+			return -1;
 		}
 	}
 }
 
 
-bool FileSystem::lseek(size_t i_index, size_t i_pos)
+size_t FileSystem::lseek(size_t i_index, size_t i_pos)
 {
 	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
 
 	if (!entry)
-		return false;
+		return -1;
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
 	if (i_pos >= fd.file_size)
-		return false;
+		return -1;
 
 	size_t cur_pos = entry->cur_pos;
 
@@ -242,7 +243,7 @@ bool FileSystem::lseek(size_t i_index, size_t i_pos)
 
 	entry->cur_pos = i_pos;
 
-	return true;
+	return entry->cur_pos;
 }
 
 std::vector<FileSystem::FileInfo> FileSystem::directory()
