@@ -12,7 +12,7 @@ public:
   };
 
 public:
-  const static size_t MAX_TABLE_LENGTH = 32;
+  const static size_t MAX_TABLE_LENGTH = 4;
 
 public:
   OpenFileTable();

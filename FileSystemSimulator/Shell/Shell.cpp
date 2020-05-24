@@ -198,7 +198,7 @@ void Shell::printReadCommandResult(size_t i_index, size_t i_count)
 	if (bytes_read == -1)
 		cout << "Error occured while trying to read requested file.\n";
 	else {
-		mem_area[bytes_read + 1] = '\0';
+		mem_area[bytes_read] = '\0';
 		cout << "Read from file: " << mem_area << endl;
 	}
 	delete[] mem_area;

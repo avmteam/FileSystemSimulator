@@ -2,6 +2,23 @@
 #include "FileSystem.h"
 #include "../IOSystem/IOSystem.h"
 
+namespace {
+  bool namesAreEqual(FileSystem::DirEntry* i_entry, const std::string& i_name) {
+    char file_name[FileSystem::DirEntry::MAX_FILE_NAME_LENGTH + 1];
+    std::memcpy(file_name, i_entry->file_name, FileSystem::DirEntry::MAX_FILE_NAME_LENGTH);
+    file_name[FileSystem::DirEntry::MAX_FILE_NAME_LENGTH] = '\0';
+
+    return (std::strcmp(file_name, i_name.c_str()) == 0);
+  }
+
+  char* fixName(char* i_name) {
+    char* file_name = new char[FileSystem::DirEntry::MAX_FILE_NAME_LENGTH + 1];
+    std::memcpy(file_name, i_name, FileSystem::DirEntry::MAX_FILE_NAME_LENGTH);
+    file_name[FileSystem::DirEntry::MAX_FILE_NAME_LENGTH] = '\0';
+
+    return file_name;
+  }
+}
 
 FileSystem::FileSystem() :
   iosystem(new IOSystem()),
@@ -25,7 +42,7 @@ FileSystem::~FileSystem()
 
 bool FileSystem::create(const std::string & i_file_name)
 {
-  if (i_file_name == "")
+  if (i_file_name == "" || i_file_name.size() > DirEntry::MAX_FILE_NAME_LENGTH)
     return false;
 
   int fd_index = findFreeFileDescriptor();
@@ -54,15 +71,15 @@ bool FileSystem::destroy(const std::string & i_file_name)
 
 		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
 			DirEntry* entry = (DirEntry*)block + j;
-			if (strcmp(entry->file_name, i_file_name.c_str()) == 0) {
+      if (namesAreEqual(entry, i_file_name)){
+
 				if (oft->checkOpenFD(entry->file_descr_index)) return false;
 				
 				FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
-				for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
-					if (!setBit(fd.data_blocks[i], true)) return false;
-				}
-				fd.is_free = true;
-				fd.clearDataBlocks();
+        for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
+          if (!setBit(fd.data_blocks[i], true)) return false;
+        }
+				fd.clear();
 				writeFileDescriptorToIO(fd, entry->file_descr_index);
 
 				*entry = DirEntry("", -1);
@@ -140,28 +157,33 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     writeFileDescriptorToIO(fd, entry->fd_index);
   }
 
+  size_t have_written = 0;
   while (true) {
 
     size_t buffer_pos = entry->cur_pos % Sector::BLOCK_SIZE;
     size_t buffer_space = Sector::BLOCK_SIZE - buffer_pos;
 
     if (i_count <= buffer_space) {
-      std::memcpy(entry->buffer + buffer_pos, i_mem_area, i_count);
+      std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, i_count);
       entry->cur_pos += i_count;
+      have_written += i_count;
 
-	  if (entry->cur_pos > fd.file_size) {
-		  fd.file_size = entry->cur_pos;
-		  writeFileDescriptorToIO(fd, entry->fd_index);
-	  }
-      return true;
+	    if (entry->cur_pos > fd.file_size) {
+		    fd.file_size = entry->cur_pos;
+		    writeFileDescriptorToIO(fd, entry->fd_index);
+	    }
+
+      return have_written;
     }
 
-    std::memcpy(entry->buffer + buffer_pos, i_mem_area, buffer_space);
-	size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-	iosystem->write_block(block_number, entry->buffer);
+    std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, buffer_space);
+	  size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
+	  iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
+    have_written += buffer_space;
     i_count -= buffer_space;
-    if (entry->cur_pos >= fd.file_size) {
+
+    if (entry->cur_pos > fd.file_size) {
       fd.file_size = entry->cur_pos;
       writeFileDescriptorToIO(fd, entry->fd_index);
 
@@ -199,25 +221,24 @@ int FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 		if (local_count <= buffer_space) {
 			std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, local_count);
 			entry->cur_pos += local_count;
-			return entry->cur_pos - 1;
+      have_written += local_count;
+
+			return have_written;
 		}
 
 		std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, buffer_space);
 		size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
-		//iosystem->write_block(block_number, entry->buffer);
+
+		iosystem->write_block(block_number, entry->buffer);
 		iosystem->read_block(block_number + 1, entry->buffer);
 		entry->cur_pos += buffer_space;
 		have_written += buffer_space;
 		local_count -= buffer_space;
-
-		if (entry->cur_pos >= fd.file_size) {
-			return -1;
-		}
 	}
 }
 
 
-size_t FileSystem::lseek(size_t i_index, size_t i_pos)
+int FileSystem::lseek(size_t i_index, size_t i_pos)
 {
 	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
 
@@ -226,7 +247,7 @@ size_t FileSystem::lseek(size_t i_index, size_t i_pos)
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
-	if (i_pos >= fd.file_size)
+	if (i_pos > fd.file_size)
 		return -1;
 
 	size_t cur_pos = entry->cur_pos;
@@ -264,14 +285,18 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
         break;
 
 			DirEntry* entry = (DirEntry*)block + j;		
-			if (strcmp(entry->file_name, "") == 0)
+      if (namesAreEqual(entry, ""))
 			    continue;
 
-      // findFileDescriptor returns index of found file descriptor
-			FileDescriptor fd = getFileDescriptor(findFileDescriptor(entry->file_name));
+      char* name = fixName(entry->file_name);
 
-			FileInfo fi(entry->file_name, fd.file_size);
+      // findFileDescriptor returns index of found file descriptor
+			FileDescriptor fd = getFileDescriptor(findFileDescriptor(name));
+
+			FileInfo fi(name, fd.file_size);
 			files.push_back(fi);
+
+      delete[] name;
 		}
 	}
 
@@ -304,7 +329,7 @@ int FileSystem::findFreeFileDescriptor()
     iosystem->read_block(i, block);
     for (size_t j = 0; j < FDS_IN_BLOCK; j++) {
       FileDescriptor* fd = (FileDescriptor*)block + j;
-      if (fd->is_free)
+      if (fd->isFree())
         return (i - first_fd_index)*FDS_IN_BLOCK + j;
     }
   }
@@ -326,11 +351,11 @@ bool FileSystem::recordFileToDir(const std::string & i_file_name, size_t i_fd_in
 
     for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
       DirEntry* entry = (DirEntry*)block + j;
-      if (strcmp(entry->file_name, i_file_name.c_str()) == 0)
+      if (namesAreEqual(entry, i_file_name))
         return false;
 
       // check if this entry is free
-      if (strcmp(entry->file_name, "") == 0 && first_free_index == -1)
+      if (namesAreEqual(entry, "") && first_free_index == -1)
         first_free_index = i * ENTRIES_IN_BLOCK + j;
 
       if (i*ENTRIES_IN_BLOCK + j == entries_number - 1)
@@ -471,7 +496,8 @@ int FileSystem::findFileDescriptor(const std::string & i_file_name)
 
     for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
       DirEntry* entry = (DirEntry*)block + j;
-      if (strcmp(entry->file_name, i_file_name.c_str()) == 0)
+
+      if (namesAreEqual(entry, i_file_name))
         return entry->file_descr_index;
 
       if (i*ENTRIES_IN_BLOCK + j == entries_number - 1)

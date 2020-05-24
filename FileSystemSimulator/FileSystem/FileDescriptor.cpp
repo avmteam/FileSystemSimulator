@@ -4,13 +4,14 @@
 
 FileDescriptor::FileDescriptor()
 {
-  clearDataBlocks();
+  clear();
 }
 
-FileDescriptor::FileDescriptor(bool i_is_free) :
-  is_free(i_is_free)
+FileDescriptor::FileDescriptor(bool i_is_free)
 {
-  clearDataBlocks();
+  clear();
+  if (!i_is_free)
+    file_size = 0;
 }
 
 bool FileDescriptor::isFull(){
@@ -37,8 +38,14 @@ bool FileDescriptor::addBlock(size_t i_index) {
   return true;
 }
 
-void FileDescriptor::clearDataBlocks()
+void FileDescriptor::clear()
 {
+  file_size = -1;
   for (size_t i = 0; i < MAX_DATA_BLOCKS; i++)
     data_blocks[i] = -1;
+}
+
+bool FileDescriptor::isFree()
+{
+  return (file_size == -1);
 }
