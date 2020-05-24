@@ -145,7 +145,8 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     return -1;
 
   FileDescriptor fd = getFileDescriptor(entry->fd_index);
-  if (fd.file_size == 0) {
+
+  if (entry->cur_pos % Sector::BLOCK_SIZE == 0) {
     bool success = allocateDataBlock(entry->fd_index);
     if (!success)
       return -2; // failed to allocate block code
@@ -160,8 +161,15 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     size_t buffer_pos = entry->cur_pos % Sector::BLOCK_SIZE;
     size_t buffer_space = Sector::BLOCK_SIZE - buffer_pos;
 
-    if (i_count < buffer_space) {
+    size_t block_index = entry->cur_pos / Sector::BLOCK_SIZE;
+    size_t block_number = fd.data_blocks[block_index];
+
+    if (i_count <= buffer_space) {
       std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, i_count);
+
+      if (i_count == buffer_space)
+        iosystem->write_block(block_number, entry->buffer);
+
       entry->cur_pos += i_count;
       have_written += i_count;
 
@@ -174,10 +182,6 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     }
 
     std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, buffer_space);
-
-    size_t block_index = entry->cur_pos / Sector::BLOCK_SIZE;
-	  size_t block_number = fd.data_blocks[block_index];
-
 	  iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
     have_written += buffer_space;
