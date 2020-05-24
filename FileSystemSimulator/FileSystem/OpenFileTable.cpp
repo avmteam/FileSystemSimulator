@@ -56,3 +56,11 @@ bool OpenFileTable::isExist(size_t i_index)
   OFTEntry entry = entries[i_index];
   return (entry.fd_index != -1);
 }
+
+bool OpenFileTable::checkOpenFD(size_t fd_index)
+{
+	for (int i = 0; i < MAX_TABLE_LENGTH; i++) {
+		if (entries[i].fd_index == fd_index) return true;
+	}
+	return false;
+}
