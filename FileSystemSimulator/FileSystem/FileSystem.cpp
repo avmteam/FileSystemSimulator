@@ -225,7 +225,7 @@ int FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 		if (local_count <= buffer_space) {
 			std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, local_count);
 			entry->cur_pos += local_count;
-      have_written += local_count;
+			have_written += local_count;
 
 			return have_written;
 		}

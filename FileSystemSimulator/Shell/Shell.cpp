@@ -32,11 +32,64 @@ void Shell::printHelp()
 	cout << "write to file 2nd variant - " + write_command + " <key> <character> <count>\n";
 	cout << "lseek in file - " + lseek_command + " <key> <position>\n";
 	cout << "list all files on disk - " + directory_command + "\n";
+	cout << "list all test cases - " + tests_help_command + "\n";
 	cout << "exit simulator - " + exit_command + "\n\n";
+}
+
+void Shell::printTestCases()
+{
+	cout << "Test help:\n";
+	cout << "  Test id\t\tTest case\n";
+	cout << "\t1\t" << "open already opened file\n";
+	cout << "\t2\t" << "exceed filename length\n";
+	cout << "\t3\t" << "destroy opened file\n";
+	cout << "\t4\t" << "create destroy opened file\n";
+	//cout << "5\t\t" << "test case 5\n";
+	//cout << "6\t\t" << "test case 6\n";
+	//cout << "7\t\t" << "test case 7\n";
+	//cout << "8\t\t" << "test case 8\n";
+	//cout << "9\t\t" << "test case 9\n";
+	cout << "\nUsage: test <id>\n";
 }
 
 int Shell::parseCommand(string i_command_string)
 {
+	if (i_command_string == tests_help_command) {
+
+		printTestCases();
+		return success_code;
+	}
+
+	if (i_command_string.length() >= 6 && i_command_string.substr(0, 4) == "test") {
+
+		cout << "You have chosen test #" + i_command_string.substr(5, 6) << endl;
+
+		int test_id = stoi(i_command_string.substr(5, 6));
+		if (i_command_string.length() > 6)
+			cout << "Improper test command.\n";
+
+		switch (test_id) {
+
+		case 1:
+			openAlreadyOpenedFileTestCase();
+			break;
+		case 2:
+			filenameLengthExceededTestCase();
+			break;
+		case 3:
+			destroyOpenedFile();
+			break;
+		case 4:
+			createDestroyOpenFileTestCase();
+			break;
+		default:
+			cout << "Test with this id does not exist.\n";
+			break;
+		}
+
+		return success_code;
+	}
+
 	if (!isValidCommandName(i_command_string.substr(0, 3))) {
 		cout << "Invalid command name, try again. Print gh to get help and view list of commands.\n";
 		return invalid_command_code; 
@@ -169,7 +222,7 @@ void Shell::printCreateCommandResult(const std::string & i_file_name)
 void Shell::printDestroyCommandResult(const std::string & i_file_name)
 {
 	if (!filesystem->destroy(i_file_name))
-		cout << "Error occured while trying to destroy requested file.\n";
+		cout << "Error occured while trying to destroy file \"" << i_file_name << "\".\n";
 	else
 		cout << "File " << i_file_name << " destroyed.\n";
 }
@@ -178,15 +231,15 @@ void Shell::printOpenCommandResult(const std::string & i_file_name)
 {
 	int key = filesystem->open(i_file_name);
 	if (key != -1)
-		cout << "Your key for file " << "\"" << i_file_name << "\" is " << key << endl;
+		cout << "File " << i_file_name << " opened. Your key for file " << "\"" << i_file_name << "\" is " << key << ".\n";
 	else
-		cout << "Error occured while trying to open requested file.\n";
+		cout << "Error occured while trying to open file \"" << i_file_name << "\".\n";
 }
 
 void Shell::printCloseCommandResult(size_t i_index)
 {
 	if (!filesystem->close(i_index))
-		cout << "Error occured while trying to close requested file.\n";
+		cout << "Error occured while trying to close file " << i_index << ".\n";
 	else
 		cout << "File " << i_index << " closed.\n";
 }
@@ -196,7 +249,7 @@ void Shell::printReadCommandResult(size_t i_index, size_t i_count)
 	char* mem_area = new char[i_count + 1];
 	int bytes_read = filesystem->read(i_index, mem_area, i_count);
 	if (bytes_read == -1)
-		cout << "Error occured while trying to read requested file.\n";
+		cout << "Error occured while trying to read file " << i_index << ".\n";
 	else {
 		mem_area[bytes_read] = '\0';
 		cout << "Read from file: " << mem_area << endl;
@@ -212,21 +265,21 @@ void Shell::printWriteCommandResult(size_t i_index, char * i_mem_area, size_t i_
 	else if (bytes == -2)
 		cout << "New block allocation failed.\n";
 	else 
-		cout << i_count << (i_count == 1 ? " byte" : " bytes") << " written to file.\n";
+		cout << i_count << (i_count == 1 ? " byte" : " bytes") << " written to file " << i_index << ".\n";
 }
 
 void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 {
 	int pos = filesystem->lseek(i_index, i_pos);
 	if (pos == -1)
-		cout << "Error occured while trying to lseek through requested file.\n";
+		cout << "Error occured while trying to lseek through file " << i_index << ".\n";
 	else
 		cout << "Current position in " << pos << endl;
 }
 
 void Shell::filenameLengthExceededTestCase()
 {
-	parseCommand("cr super_super_super_looooooooooooong_file_name.txt");
+	parseCommand("cr super_super_super_looooooooooooong_file_name");
 }
 
 void Shell::invalidFilenameTestCase()
@@ -237,23 +290,23 @@ void Shell::invalidFilenameTestCase()
 
 void Shell::createDestroyOpenFileTestCase()
 {
-	parseCommand("cr test.txt");
-	parseCommand("ds test.txt");
-	parseCommand("op test.txt");
+	parseCommand(create_command + " f");
+	parseCommand(destroy_command + " f");
+	parseCommand(open_command + " f");
 }
 
 void Shell::openAlreadyOpenedFileTestCase()
 {
-	parseCommand("cr test.txt");
-	parseCommand("op test.txt");
-	parseCommand("op test.txt");
+	parseCommand(create_command + " g");
+	parseCommand(open_command + " g");
+	parseCommand(open_command + " g");
 }
 
 void Shell::destroyOpenedFile()
 {
-	parseCommand("cr test.txt");
-	parseCommand("op test.txt");
-	parseCommand("ds test.txt");
+	parseCommand(create_command +" h");
+	parseCommand(open_command + " h");
+	parseCommand(destroy_command + " h");
 }
 
 bool Shell::isValidCommandName(string i_command_name)
