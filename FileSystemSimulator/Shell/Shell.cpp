@@ -46,7 +46,7 @@ void Shell::printTestCases()
 	cout << "\t4\t" << "create destroy opened file\n";
 	cout << "5\t\t" << "lseek further than end of file\n";
 	cout << "6\t\t" << "exceed maximum file size\n";
-	//cout << "7\t\t" << "test case 7\n";
+	cout << "7\t\t" << "write on border of data blocks\n";
 	//cout << "8\t\t" << "test case 8\n";
 	//cout << "9\t\t" << "test case 9\n";
 	cout << "\nUsage: test <id>\n";
@@ -87,6 +87,9 @@ int Shell::parseCommand(string i_command_string)
 			break;
 		case 6:
 			exceedMaxFileSize();
+			break;
+		case 7:
+			writeDataOnBlocksBorder();
 			break;
 
 		default:
