@@ -71,7 +71,7 @@ int Shell::parseCommand(string i_command_string)
 
 	if (i_command_string.length() >= 6 && i_command_string.substr(0, 4) == "test") {
 
-		cout << "You have chosen test #" + i_command_string.substr(5, 6) << endl;
+		cout << "\nYou have chosen test #" + i_command_string.substr(5, 6) << endl;
 
 		int test_id = stoi(i_command_string.substr(5, 6));
 		if (i_command_string.length() > 6) {
@@ -82,7 +82,6 @@ int Shell::parseCommand(string i_command_string)
 
 		HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
-		cout << "Test: \n\n";
 
 		switch (test_id) {
 
@@ -319,137 +318,170 @@ void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 
 void Shell::filenameLengthExceeded()
 {
-	cout << "cr super_super_super_looooooooooooong_file_name" << endl;
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+	cout << endl << "cr super_super_super_looooooooooooong_file_name" << endl << endl;
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
 	parseCommand("cr super_super_super_looooooooooooong_file_name");
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+
 }
 
 void Shell::createDestroyOpenFile()
 {
-	cout << "Commands to call:\n";
-	cout << create_command + " f\n";
-	cout << destroy_command + " f\n";
-	cout << open_command + " f\n";
-	cout << "\nResults:\n";
-	parseCommand(create_command + " f");
-	parseCommand(destroy_command + " f");
-	parseCommand(open_command + " f");
+	vector<string> commands;
+	commands.push_back(create_command + " f");
+	commands.push_back(destroy_command + " f");
+	commands.push_back(open_command + " f");
+
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	for (string var : commands)
+	{
+		cout << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+		cout << var << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
+		parseCommand(var);
+	}
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+
 }
 
 void Shell::openAlreadyOpenedFile()
 {
-	cout << "Commands to call:\n";
-	cout << create_command + " g\n";
-	cout << open_command + " g\n";
-	cout << open_command + " g\n";
-	cout << close_command + " 0\n";
-	cout << destroy_command + " g\n";
-	cout << "\nResults:\n";
+	vector<string> commands;
+	commands.push_back(create_command + " g");
+	commands.push_back(open_command + " g");
+	commands.push_back(open_command + " g");
+	commands.push_back(close_command + " 0");
+	commands.push_back(destroy_command + " g");
 
-	parseCommand(create_command + " g");
-	parseCommand(open_command + " g");
-	parseCommand(open_command + " g");
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	for (string var : commands)
+	{
+		cout << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+		cout << var << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
+		parseCommand(var);
+	}
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
 
-	parseCommand(close_command + " 0");
-	parseCommand(destroy_command + " g");
 }
 
 void Shell::destroyOpenedFile()
 {
-	cout << "Commands to call:\n";
-	cout << create_command + "h\n";
-	cout << open_command + " h\n";
-	cout << destroy_command + " h\n";
-	cout << close_command + " 0\n";
-	cout << destroy_command + " h\n";
-	cout << "\nResults:\n";
+	vector<string> commands;
+	commands.push_back(create_command + " g");
+	commands.push_back(open_command + " g");
+	commands.push_back(destroy_command + " g");
+	commands.push_back(close_command + " 0");
+	commands.push_back(destroy_command + " g");
 
-	parseCommand(create_command + " h");
-	parseCommand(open_command + " h");
-	parseCommand(destroy_command + " h");
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	for (string var : commands)
+	{
+		cout << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+		cout << var << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
+		parseCommand(var);
+	}
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
 
-	parseCommand(close_command + " 0");
-	parseCommand(destroy_command + " h");
 }
 
 void Shell::lseekFurtherThanEnd()
 {
-	cout << "Commands to call:\n";
-	cout << create_command + " h\n";
-	cout << open_command + " h\n";
-	cout << write_command + " 0 b 5\n";
-	cout << lseek_command + " 0 15\n";
-	cout << close_command + " 0\n";
-	cout << destroy_command + " h\n";
-	cout << "\nResults:\n";
+	vector<string> commands;
+	commands.push_back(create_command + " h");
+	commands.push_back(open_command + " h");
+	commands.push_back(write_command + " 0 b 5");
+	commands.push_back(lseek_command + " 0 15");
+	commands.push_back(close_command + " 0");
+	commands.push_back(destroy_command + " h");
 
-	parseCommand(create_command + " h");
-	parseCommand(open_command + " h");
-	parseCommand(write_command + " 0 b 5");
-	parseCommand(lseek_command + " 0 15");
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	for (string var : commands)
+	{
+		cout << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+		cout << var << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
+		parseCommand(var);
+	}
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
 
-	parseCommand(close_command + " 0");
-	parseCommand(destroy_command + " h");
 }
 
 void Shell::exceedMaxFileSize()
 {
 	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
 
-	cout << "Commands to call:\n";
-	cout << create_command + "f2\n";
-	cout << open_command + " f2\n";
-	cout << write_command + " 0 b " + to_string(max_size + 1) << endl;
-	cout << lseek_command + " 0 0\n";
-	cout << read_command + " 0 " + to_string(max_size) << endl;
-	cout << close_command + " 0\n";
-	cout << destroy_command + " f2\n";
-	cout << "\nResults:\n";
+	vector<string> commands;
+	commands.push_back(create_command + " f2");
+	commands.push_back(open_command + " f2");
+	commands.push_back(write_command + " 0 b " + to_string(max_size + 1));
+	commands.push_back(lseek_command + " 0 0");
+	commands.push_back(read_command + " 0 " + to_string(max_size));
+	commands.push_back(close_command + " 0");
+	commands.push_back(destroy_command + " f2");
 
-	parseCommand(create_command + " f2");
-	parseCommand(open_command + " f2");
-	parseCommand(write_command + " 0 b " + to_string(max_size + 1));
-	parseCommand(write_command + " 0 b " + to_string(max_size + 1));
-	parseCommand(read_command + " 0 " + to_string(max_size));
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	for (string var : commands)
+	{
+		cout << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+		cout << var << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
+		parseCommand(var);
+	}
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
 
-	parseCommand(close_command + " 0");
-	parseCommand(destroy_command + " f2");
 }
 
 void Shell::writeDataOnBlocksBorder()
 {
 	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
 
-	cout << "Commands to call:\n";
-	cout << create_command + "f3\n";
-	cout << open_command + " f3\n";
-	cout << write_command + " 0 b " + to_string(Sector::BLOCK_SIZE) << endl;
-	cout << write_command + " 0 c 5\n";
-	cout << lseek_command + " 0 0\n";
-	cout << read_command + " 0 " + to_string(max_size) << endl;
-	cout << close_command + " 0\n";
-	cout << destroy_command + " f3\n";
-	cout << "\nResults:\n";
+	vector<string> commands;
+	commands.push_back(create_command + " f3");
+	commands.push_back(open_command + " f3");
+	commands.push_back(write_command + " 0 b " + to_string(Sector::BLOCK_SIZE));
+	commands.push_back(write_command + " 0 c 5");
 
-	parseCommand(create_command + " f3");
-	parseCommand(open_command + " f3");
-	parseCommand(write_command + " 0 b " + to_string(Sector::BLOCK_SIZE));
-	parseCommand(write_command + " 0 c 5");
+	commands.push_back(lseek_command + " 0 0");
+	commands.push_back(read_command + " 0 " + to_string(max_size));
 
-	parseCommand(lseek_command + " 0 0");
-	parseCommand(read_command + " 0 " + to_string(max_size));
+	commands.push_back(close_command + " 0");
+	commands.push_back(destroy_command + " f3");
 
-	parseCommand(close_command + " 0");
-	parseCommand(destroy_command + " f3");
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	for (string var : commands)
+	{
+		cout << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+		cout << var << endl;
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
+		parseCommand(var);
+	}
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+
 }
 
 void Shell::maxFilesNumber()
 {
-	cout << "Creating " << FileSystem::FD_NUMBER << " - 1 files...\n";
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+	cout << "Creating " << FileSystem::FD_NUMBER << " - 1 files...\n\n";
 
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
 	for (int i = 1; i < FileSystem::FD_NUMBER; ++i) {
 
 		parseCommand(create_command + ' ' + to_string(i));
 	}
+	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
+
 }
 
 bool Shell::isValidCommandName(string i_command_name)
