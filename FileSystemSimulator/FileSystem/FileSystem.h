@@ -10,7 +10,6 @@ class FileSystem
 {
 public:
 
-
   struct DirEntry {
     static const size_t MAX_FILE_NAME_LENGTH = 4;
 
@@ -62,6 +61,8 @@ private:
 private:
   IOSystem* iosystem;
   OpenFileTable* oft;
+
+public:
 
   static const size_t ENTRIES_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(DirEntry);
   static const size_t FDS_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(FileDescriptor);

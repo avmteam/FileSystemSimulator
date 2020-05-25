@@ -47,6 +47,7 @@ public:
 	void lseekFurtherThanEnd();
 	void exceedMaxFileSize();
 	void writeDataOnBlocksBorder();
+	void maxFilesNumber();
 
 private:
 
