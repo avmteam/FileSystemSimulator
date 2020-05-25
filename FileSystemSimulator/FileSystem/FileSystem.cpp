@@ -71,12 +71,12 @@ bool FileSystem::destroy(const std::string & i_file_name)
 
 		for (size_t j = 0; j < ENTRIES_IN_BLOCK; j++) {
 			DirEntry* entry = (DirEntry*)block + j;
-      if (namesAreEqual(entry, i_file_name)){
+			if (namesAreEqual(entry, i_file_name)){
 
 				if (oft->checkOpenFD(entry->file_descr_index)) return false;
 				
 				FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
-        for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
+				 for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
           if (!setBit(fd.data_blocks[i], true)) return false;
         }
 				fd.clear();
@@ -101,7 +101,7 @@ int FileSystem::open(const std::string & i_file_name)
   size_t fd_index = findFileDescriptor(i_file_name);
   if (fd_index == -1)
     return -1;
-
+  
   size_t oft_index = oft->addNewEntry(fd_index);
   if (oft_index == -1)
     return -1;
@@ -182,7 +182,7 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
     }
 
     std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, buffer_space);
-	  iosystem->write_block(block_number, entry->buffer);
+	iosystem->write_block(block_number, entry->buffer);
     entry->cur_pos += buffer_space;
     have_written += buffer_space;
     i_count -= buffer_space;

@@ -13,10 +13,12 @@ OpenFileTable::~OpenFileTable()
 
 int OpenFileTable::addNewEntry(size_t i_fd_index)
 {
-  size_t first_free_entry = -1;
+  int first_free_entry = -1;
   for (size_t i = 0; i < MAX_TABLE_LENGTH; i++) {
     if (entries->fd_index == i_fd_index)
       return -1;
+
+	
 
     if (entries[i].fd_index == -1 && first_free_entry == -1)
       first_free_entry = i;
