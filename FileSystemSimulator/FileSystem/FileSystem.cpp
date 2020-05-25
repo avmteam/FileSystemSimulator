@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "FileSystem.h"
 #include "../IOSystem/IOSystem.h"
+#include "ErrorCodes.h"
 
 namespace {
   bool namesAreEqual(FileSystem::DirEntry* i_entry, const std::string& i_name) {
@@ -40,27 +41,27 @@ FileSystem::~FileSystem()
   delete oft;
 }
 
-bool FileSystem::create(const std::string & i_file_name)
+int FileSystem::create(const std::string & i_file_name)
 {
   if (i_file_name == "" || i_file_name.size() > DirEntry::MAX_FILE_NAME_LENGTH)
-    return false;
+    return invalid_filename;
 
   int fd_index = findFreeFileDescriptor();
   if (fd_index == -1)
-    return false;
+    return max_file_descriptiors_number_exceeded;
 
   bool success = recordFileToDir(i_file_name, fd_index);
   if (!success)
-    return false;
+    return directory_max_files_exceeded;
 
   writeFileDescriptorToIO(FileDescriptor(false), fd_index);
-  return true;
+  return FileSystem::success_code;
 }
 
-bool FileSystem::destroy(const std::string & i_file_name)
+int FileSystem::destroy(const std::string & i_file_name)
 {
 	if (i_file_name == "")
-		return false;
+		return invalid_filename;
 	
 	FileDescriptor dir_fd = getFileDescriptor(0);
 	size_t entries_number = dir_fd.file_size / sizeof(DirEntry);
@@ -73,18 +74,18 @@ bool FileSystem::destroy(const std::string & i_file_name)
 			DirEntry* entry = (DirEntry*)block + j;
 			if (namesAreEqual(entry, i_file_name)){
 
-				if (oft->checkOpenFD(entry->file_descr_index)) return false;
+				if (oft->checkOpenFD(entry->file_descr_index)) return file_is_opened;
 				
 				FileDescriptor fd = getFileDescriptor(entry->file_descr_index);
 				 for (int i = 0; i <= fd.getLastBlockIndex(); i++) {
-          if (!setBit(fd.data_blocks[i], true)) return false;
+          if (!setBit(fd.data_blocks[i], true)) return false;	// TODO: return correct code
         }
 				fd.clear();
 				writeFileDescriptorToIO(fd, entry->file_descr_index);
 
 				*entry = DirEntry("", -1);
 				iosystem->write_block(dir_fd.data_blocks[i], block);
-				return true;
+				return FileSystem::success_code;
 			}
 
 			if (i*ENTRIES_IN_BLOCK + j == entries_number - 1)
@@ -92,19 +93,21 @@ bool FileSystem::destroy(const std::string & i_file_name)
 		}
 	}
 
-	return false;
-
+	return file_not_found;
 }
 
 int FileSystem::open(const std::string & i_file_name)
 {
   size_t fd_index = findFileDescriptor(i_file_name);
   if (fd_index == -1)
-    return -1;
+    return file_not_found;
   
   size_t oft_index = oft->addNewEntry(fd_index);
-  if (oft_index == -1)
-    return -1;
+  if (oft_index == max_opened_files_number_exceeded)
+    return max_opened_files_number_exceeded;
+
+  if (oft_index == file_is_opened)
+	  return file_is_opened;
 
   FileDescriptor fd = getFileDescriptor(fd_index);
   if (fd.file_size == 0)
@@ -116,11 +119,11 @@ int FileSystem::open(const std::string & i_file_name)
   return oft_index;
 }
 
-bool FileSystem::close(size_t i_index)
+int FileSystem::close(size_t i_index)
 {
   OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
   if (!entry)
-    return false;
+    return file_not_opened;
   FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
   size_t block_index = entry->cur_pos / Sector::BLOCK_SIZE;
@@ -131,7 +134,7 @@ bool FileSystem::close(size_t i_index)
   }
 
   oft->freeEntry(i_index);
-  return true;
+  return FileSystem::success_code;
 }
 
 
@@ -142,14 +145,14 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 
   OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
   if (!entry)
-    return -1;
+    return file_not_opened;
 
   FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
   if (entry->cur_pos % Sector::BLOCK_SIZE == 0) {
     bool success = allocateDataBlock(entry->fd_index);
     if (!success)
-      return -2; // failed to allocate block code
+      return out_of_disk_memory; 
 
     // update fd after allocating new block
     fd = getFileDescriptor(entry->fd_index);
@@ -194,7 +197,7 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
 
       bool success = allocateDataBlock(entry->fd_index);
       if (!success)
-        return -2;
+        return out_of_disk_memory;
 
       fd = getFileDescriptor(entry->fd_index);
     }
@@ -203,6 +206,9 @@ int FileSystem::write(size_t i_index, char* i_mem_area, size_t i_count)
   }
 }
 
+// TODO: handle case when the desired number of bytes 
+// to be read is bigger than what we can actually read
+// (perhaps return pair)
 int FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 {
 	if (i_count == 0)
@@ -210,11 +216,11 @@ int FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 
 	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
 	if (!entry)
-		return -1;
+		return file_not_opened;
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 	if (fd.file_size == 0) 
-		return -1;
+		return eof_reached_before_satisfying_read_count;
 
 	int local_count;
 	if (i_count > fd.file_size - entry->cur_pos) local_count = fd.file_size - entry->cur_pos;
@@ -252,12 +258,12 @@ int FileSystem::lseek(size_t i_index, size_t i_pos)
 	OpenFileTable::OFTEntry* entry = oft->getEntry(i_index);
 
 	if (!entry)
-		return -1;
+		return file_not_opened;
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
-	if (i_pos > fd.file_size)
-		return -1;
+	if (i_pos > fd.file_size || i_pos < 0)
+		return position_outside_file_boundaries;
 
 	size_t cur_pos = entry->cur_pos;
 
@@ -454,7 +460,7 @@ bool FileSystem::allocateDataBlock(size_t i_index)
   writeFileDescriptorToIO(fd, i_index);
   setBit(db_index, false);
 
-  return true;
+  return FileSystem::success_code;
 }
 
 int FileSystem::findFreeDataBlock()

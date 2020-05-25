@@ -38,10 +38,10 @@ public:
   FileSystem();
   ~FileSystem();
 
-  bool create(const std::string& i_file_name);
-  bool destroy(const std::string& i_file_name);
+  int create(const std::string& i_file_name);
+  int destroy(const std::string& i_file_name);
   int open(const std::string& i_file_name);
-  bool close(size_t index);
+  int close(size_t index);
   int read(size_t index, char* mem_area, size_t count);
   int write(size_t index, char* mem_area, size_t count);
   int lseek(size_t index, size_t pos);
@@ -64,6 +64,7 @@ private:
 
 public:
 
+  static const size_t success_code = 0;
   static const size_t ENTRIES_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(DirEntry);
   static const size_t FDS_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
 

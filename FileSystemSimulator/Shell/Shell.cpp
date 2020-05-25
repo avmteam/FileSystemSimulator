@@ -2,6 +2,7 @@
 #include "Shell.h"
 #include <iostream>
 #include <Windows.h>
+#include "../FileSystem/ErrorCodes.h"
 
 using namespace std;
 
@@ -252,16 +253,26 @@ int Shell::parseCommand(string i_command_string)
 
 void Shell::printCreateCommandResult(const std::string & i_file_name)
 {
-	if (filesystem->create(i_file_name))
-		cout << "File \"" + i_file_name + "\" created.\n";
+	int result = filesystem->create(i_file_name);
+	if (result == invalid_filename)
+		cout << "Invalid filename: \"" + i_file_name + "\". Should be from 1 to 4 symbols inclusively.\n";
+	else if (result == max_file_descriptiors_number_exceeded)
+		cout << "Out of memory (max number of file descriptors reached).\n";
+	else if (result == directory_max_files_exceeded)
+		cout << "Out of memory (max number of files directory can contain reached).\n";
 	else
-		cout << "File creation failure.\n";
+		cout << "File \"" + i_file_name + "\" created.\n";
 }
 
 void Shell::printDestroyCommandResult(const std::string & i_file_name)
 {
-	if (!filesystem->destroy(i_file_name))
-		cout << "Error occured while trying to destroy file \"" << i_file_name << "\".\n";
+	int result = filesystem->destroy(i_file_name);
+	if (result == invalid_filename)
+		cout << "Invalid filename: \"" + i_file_name + "\". You cannot delete directory.\n";
+	else if (result == file_is_opened)
+		cout << "Error destroying file: cannot destroy opened file.\n";
+	else if (result == file_not_found)
+		cout << "Error destroying file: file with this name does not exist.\n";
 	else
 		cout << "File " << i_file_name << " destroyed.\n";
 }
@@ -269,16 +280,20 @@ void Shell::printDestroyCommandResult(const std::string & i_file_name)
 void Shell::printOpenCommandResult(const std::string & i_file_name)
 {
 	int key = filesystem->open(i_file_name);
-	if (key != -1)
-		cout << "File " << i_file_name << " opened. Your key for file " << "\"" << i_file_name << "\" is " << key << ".\n";
+	if (key == file_not_found)
+		cout << "Error opening the file \"" + i_file_name + "\". File not found.\n";
+	else if (key == max_opened_files_number_exceeded)
+		cout << "Error opening the file \"" + i_file_name + "\". Max opened files number reached.\n";
+	else if (key == file_is_opened)
+		cout << "Error opening the file \"" + i_file_name + "\". File is already opened.\n";
 	else
-		cout << "Error occured while trying to open file \"" << i_file_name << "\".\n";
+		cout << "File " << i_file_name << " opened. Your key for file " << "\"" << i_file_name << "\" is " << key << ".\n";
 }
 
 void Shell::printCloseCommandResult(size_t i_index)
 {
-	if (!filesystem->close(i_index))
-		cout << "Error occured while trying to close file " << i_index << ".\n";
+	if (filesystem->close(i_index) == file_not_opened)
+		cout << "Error closing file " << i_index << ". File not opened\n";
 	else
 		cout << "File " << i_index << " closed.\n";
 }
@@ -310,8 +325,11 @@ void Shell::printWriteCommandResult(size_t i_index, char * i_mem_area, size_t i_
 void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 {
 	int pos = filesystem->lseek(i_index, i_pos);
-	if (pos == -1)
-		cout << "Error occured while trying to lseek through file " << i_index << ".\n";
+	if (pos == file_not_opened)
+		cout << "Error trying to set file " << i_index << " to position " << i_pos << ". File not opened.\n";
+	else if (pos == position_outside_file_boundaries)
+		cout << "Error trying to set file " << i_index << " to position " << i_pos << 
+		". Requested position outside file boundaries.\n";
 	else
 		cout << "Current position in " << pos << endl;
 }
@@ -320,9 +338,9 @@ void Shell::filenameLengthExceeded()
 {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
-	cout << endl << "cr super_super_super_looooooooooooong_file_name" << endl << endl;
+	cout << endl << create_command + " super_super_super_looooooooooooong_file_name" << endl << endl;
 	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
-	parseCommand("cr super_super_super_looooooooooooong_file_name");
+	parseCommand(create_command + " super_super_super_looooooooooooong_file_name");
 	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
 
 }
@@ -440,6 +458,7 @@ void Shell::exceedMaxFileSize()
 
 }
 
+// TODO: fix this test accordingly to lecturer's comment
 void Shell::writeDataOnBlocksBorder()
 {
 	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
