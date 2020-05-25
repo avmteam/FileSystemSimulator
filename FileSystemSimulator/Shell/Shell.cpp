@@ -319,6 +319,7 @@ void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 
 void Shell::filenameLengthExceeded()
 {
+	cout << "cr super_super_super_looooooooooooong_file_name" << endl;
 	parseCommand("cr super_super_super_looooooooooooong_file_name");
 }
 
