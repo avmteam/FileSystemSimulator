@@ -81,7 +81,7 @@ int Shell::parseCommand(string i_command_string)
 		}
 
 		HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 6));
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
 		cout << "Test: \n\n";
 
 		switch (test_id) {
@@ -125,7 +125,7 @@ int Shell::parseCommand(string i_command_string)
 		}
 
 		cout << "\n";
-		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 8));
+		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
 
 		return success_code;
 	}
@@ -329,7 +329,7 @@ void Shell::createDestroyOpenFile()
 	cout << create_command + " f\n";
 	cout << destroy_command + " f\n";
 	cout << open_command + " f\n";
-	cout << "Results:\n";
+	cout << "\nResults:\n";
 	parseCommand(create_command + " f");
 	parseCommand(destroy_command + " f");
 	parseCommand(open_command + " f");
@@ -343,7 +343,7 @@ void Shell::openAlreadyOpenedFile()
 	cout << open_command + " g\n";
 	cout << close_command + " 0\n";
 	cout << destroy_command + " g\n";
-	cout << "Results:\n";
+	cout << "\nResults:\n";
 
 	parseCommand(create_command + " g");
 	parseCommand(open_command + " g");
@@ -361,7 +361,7 @@ void Shell::destroyOpenedFile()
 	cout << destroy_command + " h\n";
 	cout << close_command + " 0\n";
 	cout << destroy_command + " h\n";
-	cout << "Results:\n";
+	cout << "\nResults:\n";
 
 	parseCommand(create_command + " h");
 	parseCommand(open_command + " h");
@@ -374,18 +374,18 @@ void Shell::destroyOpenedFile()
 void Shell::lseekFurtherThanEnd()
 {
 	cout << "Commands to call:\n";
-	cout << create_command + "h\n";
+	cout << create_command + " h\n";
 	cout << open_command + " h\n";
 	cout << write_command + " 0 b 5\n";
-	cout << lseek_command + " 0 5\n";
+	cout << lseek_command + " 0 15\n";
 	cout << close_command + " 0\n";
 	cout << destroy_command + " h\n";
-	cout << "Results:\n";
+	cout << "\nResults:\n";
 
 	parseCommand(create_command + " h");
 	parseCommand(open_command + " h");
 	parseCommand(write_command + " 0 b 5");
-	parseCommand(lseek_command + " 0 5");
+	parseCommand(lseek_command + " 0 15");
 
 	parseCommand(close_command + " 0");
 	parseCommand(destroy_command + " h");
@@ -403,7 +403,7 @@ void Shell::exceedMaxFileSize()
 	cout << read_command + " 0 " + to_string(max_size) << endl;
 	cout << close_command + " 0\n";
 	cout << destroy_command + " f2\n";
-	cout << "Results:\n";
+	cout << "\nResults:\n";
 
 	parseCommand(create_command + " f2");
 	parseCommand(open_command + " f2");
@@ -428,7 +428,7 @@ void Shell::writeDataOnBlocksBorder()
 	cout << read_command + " 0 " + to_string(max_size) << endl;
 	cout << close_command + " 0\n";
 	cout << destroy_command + " f3\n";
-	cout << "Results:\n";
+	cout << "\nResults:\n";
 
 	parseCommand(create_command + " f3");
 	parseCommand(open_command + " f3");
@@ -448,7 +448,7 @@ void Shell::maxFilesNumber()
 
 	for (int i = 1; i < FileSystem::FD_NUMBER; ++i) {
 
-		parseCommand(create_command + to_string(i));
+		parseCommand(create_command + ' ' + to_string(i));
 	}
 }
 

@@ -256,7 +256,7 @@ int FileSystem::lseek(size_t i_index, size_t i_pos)
 
 	FileDescriptor fd = getFileDescriptor(entry->fd_index);
 
-	if (i_pos >= fd.file_size)
+	if (i_pos > fd.file_size)
 		return -1;
 
 	size_t cur_pos = entry->cur_pos;
