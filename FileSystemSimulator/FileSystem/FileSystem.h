@@ -42,18 +42,18 @@ public:
   int destroy(const std::string& i_file_name);
   int open(const std::string& i_file_name);
   int close(size_t index);
-  int read(size_t index, char* mem_area, size_t count);
-  int write(size_t index, char* mem_area, size_t count);
+  std::pair<int, int> read(size_t index, char* mem_area, size_t count);
+  std::pair<int, int> write(size_t index, char* mem_area, size_t count);
   int lseek(size_t index, size_t pos);
   std::vector<FileInfo> directory();
 
 private:
   void init();
   int findFreeFileDescriptor();
-  bool recordFileToDir(const std::string & i_file_name, size_t i_fd_index);
+  int recordFileToDir(const std::string & i_file_name, size_t i_fd_index);
   FileDescriptor getFileDescriptor(size_t i_index);
   bool writeFileDescriptorToIO(const FileDescriptor& i_fd, size_t i_index);
-  bool allocateDataBlock(size_t i_index);
+  int allocateDataBlock(size_t i_index);
   int findFreeDataBlock();
   bool setBit(size_t i_index, bool i_is_free);
   int findFileDescriptor(const std::string& i_file_name);

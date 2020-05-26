@@ -151,18 +151,21 @@ int Shell::parseCommand(string i_command_string)
 
 		i_command_string.erase(0, 3);
 		printCreateCommandResult(i_command_string);
+		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == destroy_command) {
 
 		i_command_string.erase(0, 3);
 		printDestroyCommandResult(i_command_string);
+		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == open_command) {
 
 		i_command_string.erase(0, 3);
 		printOpenCommandResult(i_command_string);
+		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == close_command) {
@@ -174,6 +177,7 @@ int Shell::parseCommand(string i_command_string)
 			return -1;
 		}
 		printCloseCommandResult(key);
+		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == read_command) {
@@ -186,6 +190,7 @@ int Shell::parseCommand(string i_command_string)
 		}
 		int number_of_chars = stoi(getIWord(i_command_string, 2));
 		printReadCommandResult(key, number_of_chars);
+		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == write_command) {
@@ -219,6 +224,7 @@ int Shell::parseCommand(string i_command_string)
 			}
 		}
 		printWriteCommandResult(key, const_cast<char*>(text.c_str()), text.length());
+		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == lseek_command) {
@@ -237,6 +243,7 @@ int Shell::parseCommand(string i_command_string)
 			cout << "Invalid position.\n";
 			return -1;
 		}
+		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == directory_command) {
@@ -246,6 +253,7 @@ int Shell::parseCommand(string i_command_string)
 
 			cout << fi.file_name << ", " << fi.file_length << " bytes." << endl;
 		}
+		return success_code;
 	}
 
 	return -1;
@@ -301,23 +309,31 @@ void Shell::printCloseCommandResult(size_t i_index)
 void Shell::printReadCommandResult(size_t i_index, size_t i_count)
 {
 	char* mem_area = new char[i_count + 1];
-	int bytes_read = filesystem->read(i_index, mem_area, i_count);
-	if (bytes_read == -1)
-		cout << "Error occured while trying to read file " << i_index << ".\n";
+	pair<int,int> result = filesystem->read(i_index, mem_area, i_count);
+	int status = result.first;
+	if (status == file_not_opened)
+		cout << "Error occured while trying to read file " << i_index << ". File not opened.\n";
+	else if (status == eof_reached_before_satisfying_read_count)
+		cout << "Reading from file " << i_index << ", " << result.second 
+		<< " bytes read. Status: failed to read the desired amount of bytes.\n";
 	else {
-		mem_area[bytes_read] = '\0';
-		cout << "Read from file: " << mem_area << endl;
+		mem_area[result.second] = '\0';
+		cout << "Reading from file " << i_index << ", " << result.second
+			<< " bytes read. Status: success.\n";
 	}
 	delete[] mem_area;
 }
 
 void Shell::printWriteCommandResult(size_t i_index, char * i_mem_area, size_t i_count)
 {
-	int bytes = filesystem->write(i_index, i_mem_area, i_count);
-	if (bytes == -1)
-		cout << "Invalid file key.\n";
-	else if (bytes == -2)
-		cout << "New block allocation failed.\n";
+	pair<int, int> result = filesystem->write(i_index, i_mem_area, i_count);
+	int status = result.first;
+	if (status == file_not_opened)
+		cout << "Error occured while trying to read file " << i_index << ". File not opened.\n";
+	else if (status == out_of_disk_memory)
+		cout << "Write operaion failed: out of disk memory.\n";
+	else if (status == max_file_size_exceeded)
+		cout << result.second << (result.second == 1 ? " byte" : " bytes") << " written to file, status: failure, max file size exceeded.\n";
 	else 
 		cout << i_count << (i_count == 1 ? " byte" : " bytes") << " written to file " << i_index << ".\n";
 }

@@ -20,6 +20,7 @@ int main()
 		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
 		cout << "> ";
 		getline(cin, command);
+
 		SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
 
 	} while (shell.parseCommand(command) != shell.exit_code);

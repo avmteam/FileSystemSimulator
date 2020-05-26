@@ -13,5 +13,6 @@ enum ErrorCodes
 	eof_reached_before_satisfying_read_count,	// rd, 
 	position_outside_file_boundaries,			// sk
 	directory_max_files_exceeded,				// cr
+	max_file_size_exceeded						// 
 };
 

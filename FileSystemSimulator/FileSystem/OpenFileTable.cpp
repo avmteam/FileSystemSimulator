@@ -17,7 +17,7 @@ int OpenFileTable::addNewEntry(size_t i_fd_index)
   int first_free_entry = -1;
   for (size_t i = 0; i < MAX_TABLE_LENGTH; i++) {
     if (entries->fd_index == i_fd_index)
-      return file_is_opened;
+      return file_is_opened;//-1
 
 	
 
@@ -25,7 +25,7 @@ int OpenFileTable::addNewEntry(size_t i_fd_index)
       first_free_entry = i;
   }
   if (first_free_entry == -1)
-    return max_opened_files_number_exceeded;
+	  return max_opened_files_number_exceeded;//false
 
   entries[first_free_entry].fd_index = i_fd_index;
   return first_free_entry;
