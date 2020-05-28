@@ -333,7 +333,7 @@ void Shell::printReadCommandResult(size_t i_index, size_t i_count)
 	else {
 		mem_area[result.second] = '\0';
 		cout << "Reading from file " << i_index << ", " << result.second
-			<< " bytes read. Status: success.\n";
+			<< " bytes read: " << mem_area << ". Status: success.\n";
 	}
 	delete[] mem_area;
 }
