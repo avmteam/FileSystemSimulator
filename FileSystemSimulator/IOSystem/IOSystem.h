@@ -14,6 +14,9 @@ public:
 	void read_block(int, char*);
 	void write_block(int, char*);
 
+	bool init(const std::string & i_file_name);
+	bool save(const std::string & i_file_name);
+
 private:
 	Disk* ldisk;
 
