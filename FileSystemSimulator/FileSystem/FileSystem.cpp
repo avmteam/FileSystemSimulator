@@ -3,6 +3,8 @@
 #include "../IOSystem/IOSystem.h"
 #include "ErrorCodes.h"
 
+#include <bitset>
+
 namespace {
   bool namesAreEqual(FileSystem::DirEntry* i_entry, const std::string& i_name) {
     char file_name[FileSystem::DirEntry::MAX_FILE_NAME_LENGTH + 1];
@@ -336,11 +338,10 @@ bool FileSystem::save(const std::string & i_file_name)
 
 void FileSystem::init()
 {
-  // init bitmap with true (is_free)
-  char bitmap[Sector::BLOCK_SIZE];
-  std::memset(bitmap, true, Sector::BLOCK_SIZE);
+  // init bitmap with 0 (means its free)
+  std::bitset<Sector::BLOCK_SIZE * 8> bitmap;
   for (size_t i = 0; i < BITMAP_BLOCKS_NUMBER; i++)
-    iosystem->write_block(i, bitmap);
+    iosystem->write_block(i, (char*)&bitmap);
 
   // init file descriptors with is_free = true
   FileDescriptor block[FDS_IN_BLOCK];
@@ -481,15 +482,16 @@ int FileSystem::allocateDataBlock(size_t i_index)
 int FileSystem::findFreeDataBlock()
 {
   for (size_t i = 0; i < BITMAP_BLOCKS_NUMBER; i++) {
-    char block[Sector::BLOCK_SIZE];
-    iosystem->read_block(i, block);
+    std::bitset<8 * Sector::BLOCK_SIZE> bitmap;
+    iosystem->read_block(i, (char*)&bitmap);
 
-    for (size_t j = 0; j < Sector::BLOCK_SIZE; j++) {
-      bool* bit = (bool*)block + j;
-      size_t index = i * Sector::BLOCK_SIZE + j + FIRST_DATA_BLOCK_INDEX;
+    for (size_t j = 0; j < 8 * Sector::BLOCK_SIZE; j++) {
+      size_t index = i * 8 * Sector::BLOCK_SIZE + j;
+      if (index >= DATA_BLOCKS_NUMBER)
+        return -1;
 
-      if (*bit)
-        return (index >= Disk::NUMBER_OF_BLOCKS ? -1 : index);
+      if (!bitmap[index])
+        return index + FIRST_DATA_BLOCK_INDEX;  // return global index
     }
   }
 
@@ -503,16 +505,15 @@ bool FileSystem::setBit(size_t i_index, bool i_is_free)
   if (index < 0 || index >= DATA_BLOCKS_NUMBER)
     return false;
 
-  size_t block_number = index / Sector::BLOCK_SIZE;
-  size_t block_index = index % Sector::BLOCK_SIZE;
+  size_t block_number = index / (Sector::BLOCK_SIZE * 8);
+  size_t bitmap_index = index % (Sector::BLOCK_SIZE * 8);
 
-  char block[Sector::BLOCK_SIZE];
-  iosystem->read_block(block_number, block);
+  std::bitset<Sector::BLOCK_SIZE * 8> bitmap;
+  iosystem->read_block(block_number, (char*)&bitmap);
 
-  bool* bit = (bool*)block + block_index;
-  *bit = i_is_free;
+  bitmap.set(bitmap_index, !i_is_free);
 
-  iosystem->write_block(block_number, block);
+  iosystem->write_block(block_number, (char*)&bitmap);
   return true;
 }
 
