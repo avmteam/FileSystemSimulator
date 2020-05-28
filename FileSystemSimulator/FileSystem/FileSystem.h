@@ -38,22 +38,22 @@ public:
   FileSystem();
   ~FileSystem();
 
-  bool create(const std::string& i_file_name);
-  bool destroy(const std::string& i_file_name);
+  int create(const std::string& i_file_name);
+  int destroy(const std::string& i_file_name);
   int open(const std::string& i_file_name);
-  bool close(size_t index);
-  int read(size_t index, char* mem_area, size_t count);
-  int write(size_t index, char* mem_area, size_t count);
+  int close(size_t index);
+  std::pair<int, int> read(size_t index, char* mem_area, size_t count);
+  std::pair<int, int> write(size_t index, char* mem_area, size_t count);
   int lseek(size_t index, size_t pos);
   std::vector<FileInfo> directory();
 
 private:
   void init();
   int findFreeFileDescriptor();
-  bool recordFileToDir(const std::string & i_file_name, size_t i_fd_index);
+  int recordFileToDir(const std::string & i_file_name, size_t i_fd_index);
   FileDescriptor getFileDescriptor(size_t i_index);
   bool writeFileDescriptorToIO(const FileDescriptor& i_fd, size_t i_index);
-  bool allocateDataBlock(size_t i_index);
+  int allocateDataBlock(size_t i_index);
   int findFreeDataBlock();
   bool setBit(size_t i_index, bool i_is_free);
   int findFileDescriptor(const std::string& i_file_name);
@@ -64,6 +64,7 @@ private:
 
 public:
 
+  static const size_t success_code = 0;
   static const size_t ENTRIES_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(DirEntry);
   static const size_t FDS_IN_BLOCK = Sector::BLOCK_SIZE / sizeof(FileDescriptor);
 
