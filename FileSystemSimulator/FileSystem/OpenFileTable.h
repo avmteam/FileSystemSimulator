@@ -7,6 +7,7 @@ class OpenFileTable
 public:
   struct OFTEntry {
     char buffer[Sector::BLOCK_SIZE];
+    bool buffer_modified = false;
     size_t cur_pos = 0;
     int fd_index = -1; //means its free
   };

@@ -47,6 +47,7 @@ bool OpenFileTable::freeEntry(size_t i_index)
   OFTEntry* entry = getEntry(i_index);
   entry->fd_index = -1;
   entry->cur_pos = 0;
+  entry->buffer_modified = false;
 
   return true;
 }

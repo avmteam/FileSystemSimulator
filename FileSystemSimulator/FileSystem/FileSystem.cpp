@@ -114,7 +114,7 @@ int FileSystem::open(const std::string & i_file_name)
     return oft_index;
 
   OpenFileTable::OFTEntry* entry = oft->getEntry(oft_index);
-  iosystem->read_block(fd.data_blocks[0], entry->buffer);
+  readDataToBuffer(fd.data_blocks[0], entry);
 
   return oft_index;
 }
@@ -130,7 +130,7 @@ int FileSystem::close(size_t i_index)
   if (block_index < FileDescriptor::MAX_DATA_BLOCKS) {
     int block_number = fd.data_blocks[block_index];
     if (block_number != -1)
-      iosystem->write_block(block_number, entry->buffer);
+      writeDataFromBuffer(block_number, entry);
   }
 
   oft->freeEntry(i_index);
@@ -169,9 +169,10 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
 
     if (i_count <= buffer_space) {
       std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, i_count);
+      entry->buffer_modified = true;
 
       if (i_count == buffer_space)
-        iosystem->write_block(block_number, entry->buffer);
+        writeDataFromBuffer(block_number, entry);
 
       entry->cur_pos += i_count;
       have_written += i_count;
@@ -186,7 +187,9 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
     }
 
     std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, buffer_space);
-	iosystem->write_block(block_number, entry->buffer);
+    entry->buffer_modified = true;
+    writeDataFromBuffer(block_number, entry);
+
     entry->cur_pos += buffer_space;
     have_written += buffer_space;
     i_count -= buffer_space;
@@ -203,7 +206,7 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
       fd = getFileDescriptor(entry->fd_index);
     }
 
-    iosystem->read_block(fd.data_blocks[block_index + 1], entry->buffer);
+    readDataToBuffer(fd.data_blocks[block_index + 1], entry);
   }
 }
 
@@ -247,8 +250,8 @@ std::pair<int, int> FileSystem::read(size_t i_index, char* i_mem_area, size_t i_
 		std::memcpy(i_mem_area + have_written, entry->buffer + buffer_pos, buffer_space);
 		size_t block_number = fd.data_blocks[entry->cur_pos / Sector::BLOCK_SIZE];
 
-		iosystem->write_block(block_number, entry->buffer);
-		iosystem->read_block(block_number + 1, entry->buffer);
+        writeDataFromBuffer(block_number, entry);
+        readDataToBuffer(block_number + 1, entry);
 		entry->cur_pos += buffer_space;
 		have_written += buffer_space;
 		local_count -= buffer_space;
@@ -274,15 +277,14 @@ int FileSystem::lseek(size_t i_index, size_t i_pos)
 	size_t new_block = i_pos / Sector::BLOCK_SIZE;
 
 	// check if new position is within the current data block 
-	if (cur_block != new_block)
-	{
-    if (cur_block != FileDescriptor::MAX_DATA_BLOCKS && fd.data_blocks[cur_block] != -1)
-		  iosystem->write_block(fd.data_blocks[cur_block], entry->buffer);
-		iosystem->read_block(fd.data_blocks[new_block], entry->buffer);
+	if (cur_block != new_block){
+      if (cur_block != FileDescriptor::MAX_DATA_BLOCKS && fd.data_blocks[cur_block] != -1)
+        writeDataFromBuffer(fd.data_blocks[cur_block], entry);
+
+      readDataToBuffer(fd.data_blocks[new_block], entry);
 	}
 
 	entry->cur_pos = i_pos;
-
 	return entry->cur_pos;
 }
 
@@ -525,4 +527,19 @@ int FileSystem::findFileDescriptor(const std::string & i_file_name)
   }
 
   return -1;
+}
+
+void FileSystem::writeDataFromBuffer(size_t i_block_index, OpenFileTable::OFTEntry * ip_oft_entry)
+{
+  if (!ip_oft_entry->buffer_modified)
+    return;
+
+  iosystem->write_block(i_block_index, ip_oft_entry->buffer);
+  ip_oft_entry->buffer_modified = false;
+}
+
+void FileSystem::readDataToBuffer(size_t i_block_index, OpenFileTable::OFTEntry * ip_oft_entry)
+{
+  iosystem->read_block(i_block_index, ip_oft_entry->buffer);
+  ip_oft_entry->buffer_modified = false;
 }
