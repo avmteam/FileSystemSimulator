@@ -57,6 +57,8 @@ private:
   int findFreeDataBlock();
   bool setBit(size_t i_index, bool i_is_free);
   int findFileDescriptor(const std::string& i_file_name);
+  void writeDataFromBuffer(size_t i_block_index, OpenFileTable::OFTEntry* ip_oft_entry);
+  void readDataToBuffer(size_t i_block_index, OpenFileTable::OFTEntry* ip_oft_entry);
 
 private:
   IOSystem* iosystem;
