@@ -34,13 +34,13 @@ public:
 	void printHelp();
 	void printTestCases();
 	int parseCommand(string i_command_string);
-	void printCreateCommandResult(const std::string& i_file_name);
-	void printDestroyCommandResult(const std::string& i_file_name);
-	void printOpenCommandResult(const std::string& i_file_name);
-	void printCloseCommandResult(size_t index);
-	void printReadCommandResult(size_t i_index, size_t i_count);
-	void printWriteCommandResult(size_t i_index, char* i_mem_area, size_t i_count);
-	void printLseekCommandResult(size_t i_index, size_t i_pos);
+	int printCreateCommandResult(const std::string& i_file_name);
+	int printDestroyCommandResult(const std::string& i_file_name);
+	int printOpenCommandResult(const std::string& i_file_name);
+	int printCloseCommandResult(size_t index);
+	int printReadCommandResult(size_t i_index, size_t i_count);
+	int printWriteCommandResult(size_t i_index, char* i_mem_area, size_t i_count);
+	int printLseekCommandResult(size_t i_index, size_t i_pos);
 
 	void filenameLengthExceeded();
 	void createDestroyOpenFile();
@@ -57,6 +57,7 @@ private:
 	bool isValidCommandName(string i_command_name);
 	int getKeyFromCommandString(string i_command_string);
 	static string getIWord(string i_command_string, int i_index);
+	int createAndFillFile(string i_filename, size_t i_index);
 	void clean();
 
 private:

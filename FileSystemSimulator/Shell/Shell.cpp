@@ -53,7 +53,7 @@ void Shell::printTestCases()
 	cout << "\t6\t" << "exceed maximum file size\n";
 	cout << "\t7\t" << "write on border of data blocks\n";
 	cout << "\t8\t" << "create max number of files\n";
-	//cout << "\t9\t" << "test case 9\n";
+	cout << "\t9\t" << "out of disk memory\n";
 	cout << "\nUsage: test <id>\n";
 }
 
@@ -120,6 +120,10 @@ int Shell::parseCommand(string i_command_string)
 			clean();
 			maxFilesNumber();
 			break;
+		case 9:
+			clean();
+			outOfDiskMemory();
+			break;
 
 		default:
 			cout << "Test with this id does not exist.\n";
@@ -152,22 +156,19 @@ int Shell::parseCommand(string i_command_string)
 	if (i_command_string.substr(0, 2) == create_command) {
 
 		i_command_string.erase(0, 3);
-		printCreateCommandResult(i_command_string);
-		return success_code;
+		return printCreateCommandResult(i_command_string);
 	}
 
 	if (i_command_string.substr(0, 2) == destroy_command) {
 
 		i_command_string.erase(0, 3);
-		printDestroyCommandResult(i_command_string);
-		return success_code;
+		return printDestroyCommandResult(i_command_string);
 	}
 
 	if (i_command_string.substr(0, 2) == open_command) {
 
 		i_command_string.erase(0, 3);
-		printOpenCommandResult(i_command_string);
-		return success_code;
+		return printOpenCommandResult(i_command_string);
 	}
 
 	if (i_command_string.substr(0, 2) == close_command) {
@@ -178,8 +179,7 @@ int Shell::parseCommand(string i_command_string)
 			cout << "Invalid key format.\n";
 			return -1;
 		}
-		printCloseCommandResult(key);
-		return success_code;
+		return printCloseCommandResult(key);
 	}
 
 	if (i_command_string.substr(0, 2) == read_command) {
@@ -191,8 +191,7 @@ int Shell::parseCommand(string i_command_string)
 			return -1;
 		}
 		int number_of_chars = stoi(getIWord(i_command_string, 2));
-		printReadCommandResult(key, number_of_chars);
-		return success_code;
+		return printReadCommandResult(key, number_of_chars);
 	}
 
 	if (i_command_string.substr(0, 2) == write_command) {
@@ -225,8 +224,7 @@ int Shell::parseCommand(string i_command_string)
 				}
 			}
 		}
-		printWriteCommandResult(key, const_cast<char*>(text.c_str()), text.length());
-		return success_code;
+		return printWriteCommandResult(key, const_cast<char*>(text.c_str()), text.length());
 	}
 
 	if (i_command_string.substr(0, 2) == lseek_command) {
@@ -239,13 +237,12 @@ int Shell::parseCommand(string i_command_string)
 		}
 		try {
 			int pos = stoi(getIWord(i_command_string, 2));
-			printLseekCommandResult(key, pos);
+			return printLseekCommandResult(key, pos);
 		}
 		catch (invalid_argument e) {
 			cout << "Invalid position.\n";
 			return -1;
 		}
-		return success_code;
 	}
 
 	if (i_command_string.substr(0, 2) == directory_command) {
@@ -271,7 +268,7 @@ int Shell::parseCommand(string i_command_string)
 	return invalid_command_code;
 }
 
-void Shell::printCreateCommandResult(const std::string & i_file_name)
+int Shell::printCreateCommandResult(const std::string & i_file_name)
 {
 	int result = filesystem->create(i_file_name);
 	if (result == invalid_filename)
@@ -282,9 +279,10 @@ void Shell::printCreateCommandResult(const std::string & i_file_name)
 		cout << "Out of memory (max number of files directory can contain reached).\n";
 	else
 		cout << "File \"" + i_file_name + "\" created.\n";
+	return result;
 }
 
-void Shell::printDestroyCommandResult(const std::string & i_file_name)
+int Shell::printDestroyCommandResult(const std::string & i_file_name)
 {
 	int result = filesystem->destroy(i_file_name);
 	if (result == invalid_filename)
@@ -295,9 +293,10 @@ void Shell::printDestroyCommandResult(const std::string & i_file_name)
 		cout << "Error destroying file: file with this name does not exist.\n";
 	else
 		cout << "File " << i_file_name << " destroyed.\n";
+	return result;
 }
 
-void Shell::printOpenCommandResult(const std::string & i_file_name)
+int Shell::printOpenCommandResult(const std::string & i_file_name)
 {
 	int key = filesystem->open(i_file_name);
 	if (key == file_not_found)
@@ -308,17 +307,20 @@ void Shell::printOpenCommandResult(const std::string & i_file_name)
 		cout << "Error opening the file \"" + i_file_name + "\". File is already opened.\n";
 	else
 		cout << "File " << i_file_name << " opened. Your key for file " << "\"" << i_file_name << "\" is " << key << ".\n";
+	return key;
 }
 
-void Shell::printCloseCommandResult(size_t i_index)
+int Shell::printCloseCommandResult(size_t i_index)
 {
-	if (filesystem->close(i_index) == file_not_opened)
+	int result = filesystem->close(i_index);
+	if (result == file_not_opened)
 		cout << "Error closing file " << i_index << ". File not opened\n";
 	else
 		cout << "File " << i_index << " closed.\n";
+	return result;
 }
 
-void Shell::printReadCommandResult(size_t i_index, size_t i_count)
+int Shell::printReadCommandResult(size_t i_index, size_t i_count)
 {
 	char* mem_area = new char[i_count + 1];
 	pair<int,int> result = filesystem->read(i_index, mem_area, i_count);
@@ -336,23 +338,25 @@ void Shell::printReadCommandResult(size_t i_index, size_t i_count)
 			<< " bytes read: " << mem_area << ". Status: success.\n";
 	}
 	delete[] mem_area;
+	return result.first;
 }
 
-void Shell::printWriteCommandResult(size_t i_index, char * i_mem_area, size_t i_count)
+int Shell::printWriteCommandResult(size_t i_index, char * i_mem_area, size_t i_count)
 {
 	pair<int, int> result = filesystem->write(i_index, i_mem_area, i_count);
 	int status = result.first;
 	if (status == file_not_opened)
-		cout << "Error occured while trying to read file " << i_index << ". File not opened.\n";
+		cout << "Error occured while trying to write to file " << i_index << ". File not opened.\n";
 	else if (status == out_of_disk_memory)
 		cout << "Write operaion failed: out of disk memory.\n";
 	else if (status == max_file_size_exceeded)
 		cout << result.second << (result.second == 1 ? " byte" : " bytes") << " written to file, status: failure, max file size exceeded.\n";
 	else 
 		cout << i_count << (i_count == 1 ? " byte" : " bytes") << " written to file " << i_index << ".\n";
+	return result.first;
 }
 
-void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
+int Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 {
 	int pos = filesystem->lseek(i_index, i_pos);
 	if (pos == file_not_opened)
@@ -362,6 +366,7 @@ void Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 		". Requested position outside file boundaries.\n";
 	else
 		cout << "Current position in " << pos << endl;
+	return pos;
 }
 
 void Shell::filenameLengthExceeded()
@@ -488,7 +493,6 @@ void Shell::exceedMaxFileSize()
 
 }
 
-// TODO: fix this test accordingly to lecturer's comment
 void Shell::writeDataOnBlocksBorder()
 {
 	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
@@ -496,7 +500,7 @@ void Shell::writeDataOnBlocksBorder()
 	vector<string> commands;
 	commands.push_back(create_command + " f3");
 	commands.push_back(open_command + " f3");
-	commands.push_back(write_command + " 0 b " + to_string(Sector::BLOCK_SIZE));
+	commands.push_back(write_command + " 0 b " + to_string(Sector::BLOCK_SIZE - 2));
 	commands.push_back(write_command + " 0 c 5");
 
 	commands.push_back(lseek_command + " 0 0");
@@ -522,10 +526,10 @@ void Shell::maxFilesNumber()
 {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 15));
-	cout << "Creating " << FileSystem::FD_NUMBER << " - 1 files...\n\n";
+	cout << "Creating " << FileSystem::FD_NUMBER << " files...\n\n";
 
 	SetConsoleTextAttribute(hConsole, (WORD)((0 << 4) | 14));
-	for (int i = 1; i < FileSystem::FD_NUMBER; ++i) {
+	for (int i = 1; i <= FileSystem::FD_NUMBER; ++i) {
 
 		parseCommand(create_command + ' ' + to_string(i));
 	}
@@ -535,7 +539,23 @@ void Shell::maxFilesNumber()
 
 void Shell::outOfDiskMemory()
 {
-	
+	size_t i = 0;
+
+	while (createAndFillFile(to_string(i), 0) == success_code) ++i;
+}
+
+int Shell::createAndFillFile(string i_filename, size_t i_index)
+{
+	size_t max_size = Sector::BLOCK_SIZE * FileDescriptor::MAX_DATA_BLOCKS;
+
+	int status;
+
+	parseCommand(create_command + " " + i_filename);
+	parseCommand(open_command + " " + i_filename);
+	status = parseCommand(write_command + " " + to_string(i_index) + " a " + to_string(max_size));
+	parseCommand(close_command + " " + to_string(i_index));
+
+	return status;
 }
 
 bool Shell::isValidCommandName(string i_command_name)
