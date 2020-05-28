@@ -36,6 +36,8 @@ void Shell::printHelp()
 	cout << "list all files on disk - " + directory_command + "\n";
 	cout << "list all test cases - " + tests_help_command + "\n";
 	cout << "clean file system - " + clean_command + "\n";
+	cout << "import disk from file - " + import_disk_command + " <file.txt>\n";
+	cout << "save disk to file - " + save_disk_command + " <file.txt>\n";
 	cout << "exit simulator - " + exit_command + "\n\n";
 }
 
@@ -256,7 +258,17 @@ int Shell::parseCommand(string i_command_string)
 		return success_code;
 	}
 
-	return -1;
+	if (i_command_string.substr(0, 2) == import_disk_command) {
+
+		return success_code;
+	}
+
+	if (i_command_string.substr(0, 2) == save_disk_command) {
+
+		return success_code;
+	}
+
+	return invalid_command_code;
 }
 
 void Shell::printCreateCommandResult(const std::string & i_file_name)
@@ -313,9 +325,11 @@ void Shell::printReadCommandResult(size_t i_index, size_t i_count)
 	int status = result.first;
 	if (status == file_not_opened)
 		cout << "Error occured while trying to read file " << i_index << ". File not opened.\n";
-	else if (status == eof_reached_before_satisfying_read_count)
-		cout << "Reading from file " << i_index << ", " << result.second 
-		<< " bytes read. Status: failed to read the desired amount of bytes.\n";
+	else if (status == eof_reached_before_satisfying_read_count) {
+		mem_area[result.second] = '\0';
+		cout << "Reading from file " << i_index << ", " << result.second
+			<< " bytes read: " << mem_area << ". Status: failed to read the desired amount of bytes.\n";
+	}
 	else {
 		mem_area[result.second] = '\0';
 		cout << "Reading from file " << i_index << ", " << result.second
@@ -519,6 +533,11 @@ void Shell::maxFilesNumber()
 
 }
 
+void Shell::outOfDiskMemory()
+{
+	
+}
+
 bool Shell::isValidCommandName(string i_command_name)
 {
 	if (i_command_name.length() <= 2) 
@@ -540,7 +559,9 @@ bool Shell::isValidCommandName(string i_command_name)
 			actual_command == lseek_command ||
 			actual_command == directory_command ||
 			actual_command == help_command ||
-			actual_command == exit_command);
+			actual_command == exit_command ||
+			actual_command == import_disk_command ||
+			actual_command == save_disk_command);
 }
 
 int Shell::getKeyFromCommandString(string i_command_string)

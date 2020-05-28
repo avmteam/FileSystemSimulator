@@ -15,6 +15,8 @@ public:
 	const std::string lseek_command = "sk";
 	const std::string directory_command = "dr";
 	const std::string help_command = "gh";	// get help
+	const std::string import_disk_command = "in";
+	const std::string save_disk_command = "sv";
 	const std::string exit_command = "ex";
 	const std::string tests_help_command = "thelp";
 	const std::string clean_command = "clean";
@@ -48,6 +50,7 @@ public:
 	void exceedMaxFileSize();
 	void writeDataOnBlocksBorder();
 	void maxFilesNumber();
+	void outOfDiskMemory();
 
 private:
 
