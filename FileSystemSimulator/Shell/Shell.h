@@ -5,11 +5,11 @@
 class Shell
 {
 public:
-	
+
 	const std::string read_command = "rd";
 	const std::string write_command = "wr";
 	const std::string create_command = "cr";
-	const std::string destroy_command = "de"; 
+	const std::string destroy_command = "de";
 	const std::string open_command = "op";
 	const std::string close_command = "cl";
 	const std::string lseek_command = "sk";
@@ -20,7 +20,6 @@ public:
 	const std::string exit_command = "ex";
 	const std::string tests_help_command = "thelp";
 	const std::string clean_command = "clean";
-	
 
 	const int exit_code = -89;
 	const int invalid_command_code = 2;
@@ -47,7 +46,7 @@ public:
 	void filenameLengthExceeded();
 	void createDestroyOpenFile();
 	void openAlreadyOpenedFile();
-	void destroyOpenedFile(); 
+	void destroyOpenedFile();
 	void lseekFurtherThanEnd();
 	void exceedMaxFileSize();
 	void writeDataOnBlocksBorder();

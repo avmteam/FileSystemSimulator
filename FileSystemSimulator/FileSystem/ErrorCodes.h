@@ -13,7 +13,7 @@ enum ErrorCodes
 	position_outside_file_boundaries,			// sk
 	directory_max_files_exceeded,				// cr
 	max_file_size_exceeded,						// 
-	wrong_file_size	= -91,						// in
+	wrong_file_size = -91,						// in
 	file_not_found = -92,						// de, op, in
 };
 

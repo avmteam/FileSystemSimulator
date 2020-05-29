@@ -13,7 +13,6 @@ public:
 
 	void read_block(int, char*);
 	void write_block(int, char*);
-
 	int init(const std::string & i_file_name);
 	int save(const std::string & i_file_name);
 
@@ -24,8 +23,6 @@ private:
 	const size_t success_code = 0;
 
 	void get_block_location_on_disk(int, int*);
-
-	
 
 };
 
