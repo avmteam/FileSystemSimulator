@@ -154,7 +154,7 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
 	if (entry->cur_pos % Sector::BLOCK_SIZE == 0) {
 		int status = allocateDataBlock(entry->fd_index);
 		if (status != success_code)
-			return std::make_pair(status, 0); // was: out of disk memory
+			return std::make_pair(status, 0); 
 
 		  // update fd after allocating new block
 		fd = getFileDescriptor(entry->fd_index);
@@ -173,8 +173,11 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
 			std::memcpy(entry->buffer + buffer_pos, i_mem_area + have_written, i_count);
 			entry->buffer_modified = true;
 
-			if (i_count == buffer_space)
+			if (i_count == buffer_space) {
 				writeDataFromBuffer(block_number, entry);
+				if (fd.getLastBlockIndex() != block_index)
+					readDataToBuffer(fd.data_blocks[block_index + 1], entry);
+			}
 
 			entry->cur_pos += i_count;
 			have_written += i_count;
@@ -184,7 +187,6 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
 				writeFileDescriptorToIO(fd, entry->fd_index);
 			}
 
-			// is it success in every case?
 			return make_pair(success_code, have_written);
 		}
 
@@ -203,7 +205,7 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
 
 			int status = allocateDataBlock(entry->fd_index);
 			if (status != success_code)
-				return std::make_pair(status, have_written);	// was: out of disk memory
+				return std::make_pair(status, have_written);	
 
 			fd = getFileDescriptor(entry->fd_index);
 		}
@@ -215,7 +217,6 @@ std::pair<int, int> FileSystem::write(size_t i_index, char* i_mem_area, size_t i
 // first value: status code, second value: bytes read
 std::pair<int, int> FileSystem::read(size_t i_index, char* i_mem_area, size_t i_count)
 {
-	//return std::make_pair(0, 0);
 	if (i_count == 0)
 		return std::make_pair(success_code, i_count);
 
