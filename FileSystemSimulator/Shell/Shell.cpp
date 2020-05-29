@@ -26,7 +26,7 @@ void Shell::printHelp()
 	cout << "Help:\nCommands:\n";
 	cout << "create file - " + create_command + " <filename>\n";
 	cout << "destroy file - " + destroy_command + " <filename>\n";
-	cout << "open file - " + open_command + " <filename>\nnote: open file command " + 
+	cout << "open file - " + open_command + " <filename>\nnote: open file command " +
 		"returns opened file key, use it to read, write and lseek through the file\n";
 	cout << "close file - " + close_command + " <key>\n";
 	cout << "read from file - " + read_command + " <key> <number_of_characters_to_read>\n";
@@ -138,7 +138,7 @@ int Shell::parseCommand(string i_command_string)
 
 	if (!isValidCommandName(i_command_string.substr(0, 3))) {
 		cout << "Invalid command name, try again. Print gh to get help and view list of commands.\n";
-		return invalid_command_code; 
+		return invalid_command_code;
 	}
 
 	if (i_command_string.substr(0, 2) == exit_command) {
@@ -229,7 +229,7 @@ int Shell::parseCommand(string i_command_string)
 
 	if (i_command_string.substr(0, 2) == lseek_command) {
 
-		i_command_string.erase(0, 3); 
+		i_command_string.erase(0, 3);
 		int key = getKeyFromCommandString(i_command_string);
 		if (key == -1) {
 			cout << "Invalid key format.\n";
@@ -325,7 +325,7 @@ int Shell::printCloseCommandResult(size_t i_index)
 int Shell::printReadCommandResult(size_t i_index, size_t i_count)
 {
 	char* mem_area = new char[i_count + 1];
-	pair<int,int> result = filesystem->read(i_index, mem_area, i_count);
+	pair<int, int> result = filesystem->read(i_index, mem_area, i_count);
 	int status = result.first;
 	if (status == file_not_opened)
 		cout << "Error occured while trying to read file " << i_index << ". File not opened.\n";
@@ -353,7 +353,7 @@ int Shell::printWriteCommandResult(size_t i_index, char * i_mem_area, size_t i_c
 		cout << "Write operaion failed: out of disk memory.\n";
 	else if (status == max_file_size_exceeded)
 		cout << result.second << (result.second == 1 ? " byte" : " bytes") << " written to file, status: failure, max file size exceeded.\n";
-	else 
+	else
 		cout << i_count << (i_count == 1 ? " byte" : " bytes") << " written to file " << i_index << ".\n";
 	return result.first;
 }
@@ -364,7 +364,7 @@ int Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 	if (pos == file_not_opened)
 		cout << "Error trying to set file " << i_index << " to position " << i_pos << ". File not opened.\n";
 	else if (pos == position_outside_file_boundaries)
-		cout << "Error trying to set file " << i_index << " to position " << i_pos << 
+		cout << "Error trying to set file " << i_index << " to position " << i_pos <<
 		". Requested position outside file boundaries.\n";
 	else
 		cout << "Current position in " << pos << endl;
@@ -581,10 +581,10 @@ int Shell::createAndFillFile(string i_filename, size_t i_index)
 
 bool Shell::isValidCommandName(string i_command_name)
 {
-	if (i_command_name.length() <= 2) 
+	if (i_command_name.length() <= 2)
 		return i_command_name == help_command ||
-			   i_command_name == exit_command ||
-			   i_command_name == directory_command;
+		i_command_name == exit_command ||
+		i_command_name == directory_command;
 
 	if (i_command_name[2] != ' ') return false;
 
