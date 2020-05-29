@@ -56,16 +56,16 @@ void IOSystem::write_block(int blockNumber, char * p)
 	memcpy(block, p, Sector::BLOCK_SIZE);
 }
 
-bool IOSystem::init(const std::string & i_file_name)
+int IOSystem::init(const std::string & i_file_name)
 {
 	ifstream file;
 	file.open(i_file_name.c_str(), std::ifstream::binary);
 
-	if (!file) return false;
+	if (!file) return file_not_found;
 
 	file.seekg(0, ios_base::end);
 	int lSize = file.tellg();
-	if (lSize < Disk::NUMBER_OF_BLOCKS * Sector::BLOCK_SIZE) return false;
+	if (lSize < Disk::NUMBER_OF_BLOCKS * Sector::BLOCK_SIZE) return wrong_file_size;
 	file.seekg(0, ios_base::beg);
 
 	for (int i = 0; i < Disk::NUMBER_OF_CYLINDERS; i++)
@@ -74,10 +74,10 @@ bool IOSystem::init(const std::string & i_file_name)
 				for (int b = 0; b < Sector::NUMBER_OF_BLOCKS; b++)
 					file.read(ldisk->cylinders[i]->tracks[j]->sectors[k]->blocks[b], Sector::BLOCK_SIZE);
 	file.close();
-	return true;
+	return success_code;
 }
 
-bool IOSystem::save(const std::string & i_file_name)
+int IOSystem::save(const std::string & i_file_name)
 {
 	ofstream fileo;
 	fileo.open(i_file_name.c_str(), ofstream::out | ofstream::binary);
@@ -88,5 +88,5 @@ bool IOSystem::save(const std::string & i_file_name)
 				for (int b = 0; b < Sector::NUMBER_OF_BLOCKS; b++)
 					fileo.write(ldisk->cylinders[i]->tracks[j]->sectors[k]->blocks[b], Sector::BLOCK_SIZE);
 	fileo.close();
-	return true;
+	return success_code;
 }
