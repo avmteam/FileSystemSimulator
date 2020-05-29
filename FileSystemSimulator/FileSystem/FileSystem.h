@@ -46,8 +46,8 @@ public:
   std::pair<int, int> write(size_t index, char* mem_area, size_t count);
   int lseek(size_t index, size_t pos);
   std::vector<FileInfo> directory();
-  bool init(const std::string & i_file_name);
-  bool save(const std::string & i_file_name);
+  int init(const std::string & i_file_name);
+  int save(const std::string & i_file_name);
 
 private:
   void init();

@@ -326,12 +326,12 @@ std::vector<FileSystem::FileInfo> FileSystem::directory()
 	return files;
 }
 
-bool FileSystem::init(const std::string & i_file_name)
+int FileSystem::init(const std::string & i_file_name)
 {
 	return iosystem->init(i_file_name);
 }
 
-bool FileSystem::save(const std::string & i_file_name)
+int FileSystem::save(const std::string & i_file_name)
 {
 	return iosystem->save(i_file_name);
 }

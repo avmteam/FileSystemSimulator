@@ -257,12 +257,14 @@ int Shell::parseCommand(string i_command_string)
 
 	if (i_command_string.substr(0, 2) == import_disk_command) {
 
-		return success_code;
+		i_command_string.erase(0, 3);
+		return printImportDiskCommandResult(i_command_string);
 	}
 
 	if (i_command_string.substr(0, 2) == save_disk_command) {
 
-		return success_code;
+		i_command_string.erase(0, 3);
+		return printSaveDiskCommandResult(i_command_string);
 	}
 
 	return invalid_command_code;
@@ -367,6 +369,25 @@ int Shell::printLseekCommandResult(size_t i_index, size_t i_pos)
 	else
 		cout << "Current position in " << pos << endl;
 	return pos;
+}
+
+int Shell::printImportDiskCommandResult(const std::string & i_file_name)
+{
+	int result = filesystem->init(i_file_name);
+	if (result == file_not_found)
+		cout << "Error restoring disk: file not found.\n";
+	else if (result == wrong_file_size)
+		cout << "Error restoring disk: wrong file size (less than expected).\n";
+	else
+		cout << "Disk successfully restored from file " << i_file_name << endl;
+	return result;
+}
+
+int Shell::printSaveDiskCommandResult(const std::string & i_file_name)
+{
+	int result = filesystem->save(i_file_name);
+	cout << "Disk successfully saved in " << i_file_name << endl;
+	return result;
 }
 
 void Shell::filenameLengthExceeded()

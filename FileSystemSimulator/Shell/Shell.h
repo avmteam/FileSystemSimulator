@@ -22,7 +22,7 @@ public:
 	const std::string clean_command = "clean";
 	
 
-	const int exit_code = 1;
+	const int exit_code = -89;
 	const int invalid_command_code = 2;
 	const int success_code = 0;
 
@@ -41,6 +41,8 @@ public:
 	int printReadCommandResult(size_t i_index, size_t i_count);
 	int printWriteCommandResult(size_t i_index, char* i_mem_area, size_t i_count);
 	int printLseekCommandResult(size_t i_index, size_t i_pos);
+	int printImportDiskCommandResult(const std::string& i_file_name);
+	int printSaveDiskCommandResult(const std::string& i_file_name);
 
 	void filenameLengthExceeded();
 	void createDestroyOpenFile();
